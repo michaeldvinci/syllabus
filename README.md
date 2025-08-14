@@ -6,7 +6,7 @@ So I was maintaining this Obsidian "database" manually and got pretty tired of h
 
 I call it `Syllabus` because, well, it's a list of things to read.
 
-It's barebones and does just what I need it to do. I'm lazy and haven't added my docker-compose yet, but will.
+It's barebones and does just what I need it to do. 
 
 ![syllabus](res/syllabus.png)
 
@@ -30,11 +30,21 @@ It's barebones and does just what I need it to do. I'm lazy and haven't added my
 ## Run
 
 ```bash
-go build . 
-./Syllabus ./books.yaml
+❯ which dlf
+dlf () {
+        docker logs -f $1
+}
+
+git clone <this_repo>
+
+cd Syllabus
+
+docker buildx build -t syllabus:latest . \
+  && docker compose up -\
+  && dlf syllabus-syllabus-1
 ```
 
-Open http://localhost:8080 for the UI. The API is available at /api/series.
+Open http://localhost:8081 for the UI. The API is available at /api/series.
 
 ## Configuration
 

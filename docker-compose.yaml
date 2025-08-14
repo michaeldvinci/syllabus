@@ -1,6 +1,7 @@
 services:
   syllabus:
-    build: . 
     ports:
       - "8081:8080"
-    image: syllabus:04
+    image: syllabus:latest
+    volumes:
+      - ./config:/config
