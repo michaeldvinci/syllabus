@@ -1,9 +1,9 @@
-FROM golang:1.24 AS build
+FROM golang:1.24-alpine AS build
 WORKDIR /app
 COPY . .
 RUN go build -o syllabus . && ls -al
 
-FROM golang:1.24
+FROM golang:1.24-alpine
 ENV SYLLABUS_CONFIG=/config/books.yaml
 WORKDIR /app
 COPY --from=build /app/syllabus /app/syllabus
