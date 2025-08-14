@@ -26,6 +26,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags:
-            - michaeldvinci/syllabus:${{ github.ref_name }}
-            - michaeldvinci/syllabus:latest
+          tags: ${GITHUB_REPOSITORY}:${{ github.ref_name }},${GITHUB_REPOSITORY}:latest
