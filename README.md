@@ -57,7 +57,7 @@ Audible:
 - Audible Latest is the last occurrence of `Release date: MM-DD-YY `parsed from the series page
 
 Amazon:
-- Amazon Count is parsed from the element with id `collection-siz`e in the form `(N book series)`
+- Amazon Count is parsed from the element with id `collection-size` in the form `(N book series)`
 - Amazon Next is parsed from a span with class `a-color-success a-text-bold` containing a date like `Month D, YYYY`
 
 ## JSON API
