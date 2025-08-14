@@ -1,4 +1,4 @@
-name: release
+name: test
 
 on:
   push:
@@ -25,5 +25,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: false
           tags:
-            - ${GITHUB_REPOSITORY}:${{ github.ref_name }}
-            - ${GITHUB_REPOSITORY}:latest
+            - michaeldvinci/syllabus:latest
