@@ -4,6 +4,8 @@ A small Go web app that reads a YAML list of audiobook series and displays live 
 
 So I was maintaining this Obsidian "database" manually and got pretty tired of having to open up a ton of tabs and checking release dates periodically, resulting in Syllabus. Sample config is included to see how the screenshot below was created.
 
+I call it `Syllabus` because, well, it's a list of things to read.
+
 It's barebones and does just what I need it to do. I'm lazy and haven't added my docker-compose yet, but will.
 
 ![syllabus](res/syllabus.png)
