@@ -1,10 +1,10 @@
-# Syllabus
+# syllabus
 
 A small Go web app that reads a YAML list of audiobook series and displays live series metadata by scraping Audible and Amazon. It exposes a simple web UI and a JSON API.
 
 So I was maintaining this Obsidian "database" manually and got pretty tired of having to open up a ton of tabs and checking release dates periodically, resulting in Syllabus. Sample config is included to see how the screenshot below was created.
 
-I call it `Syllabus` because, well, it's a list of things to read.
+I call it `syllabus` because it's a list of things to read.
 
 It's barebones and does just what I need it to do. 
 
@@ -20,14 +20,36 @@ It's barebones and does just what I need it to do.
 - Optional file watching to auto-reload YAML changes
 - Minimal HTML table view and JSON API
 
+## Functionality
+ 
+- Sortable columns
+- Audible + Amazon links to series added to rows
+- Settings started to be implemented
+
 ## Requirements
 
 - Go 1.24+
 - Internet access
 - A YAML file of series
 
+## Configuration
 
-## Run
+YAML schema:
+
+```yaml
+audiobooks:
+  - title: "1% Lifesteal"
+    audible: "https://www.audible.com/series/1-Lifesteal-Audiobooks/B0F8QMLV9T"
+    amazon: "https://www.amazon.com/dp/B0DGWCJ6JP"
+  - title: "A Soldier's Life"
+    audible: "https://www.audible.com/series/A-Soldiers-Life-Audiobooks/B0D34549LX"
+    amazon: "https://www.amazon.com/dp/B0CW18NDBQ"
+```
+
+Only title, audible, and amazon are required for scraping.
+
+
+## Run Locally
 
 ```bash
 ❯ which dlf
@@ -45,22 +67,6 @@ docker buildx build -t syllabus:latest . \
 ```
 
 Open http://localhost:8081 for the UI. The API is available at /api/series.
-
-## Configuration
-
-YAML schema:
-
-```yaml
-audiobooks:
-  - title: "1% Lifesteal"
-    audible: "https://www.audible.com/series/1-Lifesteal-Audiobooks/B0F8QMLV9T"
-    amazon: "https://www.amazon.com/dp/B0DGWCJ6JP"
-  - title: "A Soldier's Life"
-    audible: "https://www.audible.com/series/A-Soldiers-Life-Audiobooks/B0D34549LX"
-    amazon: "https://www.amazon.com/dp/B0CW18NDBQ"
-```
-
-Only title, audible, and amazon are required for scraping.
 
 ## Data Sources
 
