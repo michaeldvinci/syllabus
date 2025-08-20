@@ -8,7 +8,11 @@ I call it `syllabus` because it's a list of things to read.
 
 It's barebones and does just what I need it to do. 
 
-![syllabus](res/syllabus.png)
+### Desktop
+<img alt="syllabus-desktop" src="res/syllabus-desktop.png" height="600" width="900">
+
+### Mobile
+<img alt="syllabus-mobile" src="res/syllabus-mobile.png" height="700" width="375">
 
 ## Features
 
@@ -54,12 +58,12 @@ Only title, audible, and amazon are required for scraping.
 ```bash
 ❯ which dlf
 dlf () {
-        docker logs -f $1
+  docker logs -f $1
 }
 
-git clone <this_repo>
+git clone https://github.com/michaeldvinci/syllabus.git
 
-cd Syllabus
+cd syllabus
 
 docker buildx build -t syllabus:latest . \
   && docker compose up -\
