@@ -219,14 +219,91 @@ func (p *AmazonScraperProvider) Fetch(e SeriesIDs) (SeriesInfo, error) {
 	}
 
 	reNext := regexp.MustCompile(`(?is)<span[^>]+class=["'][^"']*a-color-success[^"']*a-text-bold[^"']*["'][^>]*>\s*([^<]+?)\s*</span>`)
-	if m := reNext.FindStringSubmatch(html); len(m) == 2 {
-		txt := strings.TrimSpace(m[1])
-		if dt, err := time.Parse("January 2, 2006", txt); err == nil {
-			out.AmazonNextDate = &dt
+	hasPreorder := reNext.FindStringSubmatch(html) != nil
+	if hasPreorder {
+		if m := reNext.FindStringSubmatch(html); len(m) == 2 {
+			txt := strings.TrimSpace(m[1])
+			if dt, err := time.Parse("January 2, 2006", txt); err == nil {
+				out.AmazonNextDate = &dt
+			}
+		}
+	}
+
+	// Find itemBookTitle elements to get book URLs
+	reBookTitle := regexp.MustCompile(`(?is)<a[^>]+id=["']itemBookTitle_(\d+)["'][^>]+href=["']([^"'&]+)`)
+	bookMatches := reBookTitle.FindAllStringSubmatch(html, -1)
+	
+	if len(bookMatches) > 0 {
+		var targetURL string
+		if hasPreorder && len(bookMatches) >= 2 {
+			// Use second-to-last book when preorder exists
+			targetURL = bookMatches[len(bookMatches)-2][2]
+		} else {
+			// Use last book when no preorder exists
+			targetURL = bookMatches[len(bookMatches)-1][2]
+		}
+		
+		// Navigate to individual book page and extract publication date
+		if date := p.extractPublicationDate(targetURL); date != nil {
+			out.AmazonLatestDate = date
 		}
 	}
 
 	return out, nil
+}
+
+func (p *AmazonScraperProvider) extractPublicationDate(bookURL string) *time.Time {
+	// Handle relative URLs by prepending Amazon domain
+	if strings.HasPrefix(bookURL, "/") {
+		bookURL = "https://www.amazon.com" + bookURL
+	}
+	
+	req, err := http.NewRequest("GET", bookURL, nil)
+	if err != nil {
+		return nil
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+	
+	resp, err := p.Client.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+	
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil
+	}
+	
+	html := string(body)
+	
+	// Look for the publication date in the specific Amazon structure
+	rePubDate := regexp.MustCompile(`(?is)<span[^>]*class=["'][^"']*rpi-icon[^"']*book_details-publication_date[^"']*["'][^>]*>.*?</span>.*?<div[^>]*class=["'][^"']*rpi-attribute-value[^"']*["'][^>]*>\s*<span[^>]*>\s*([^<]+?)\s*</span>`)
+	if m := rePubDate.FindStringSubmatch(html); len(m) == 2 {
+		dateStr := strings.TrimSpace(m[1])
+		
+		// Try different date formats commonly used by Amazon
+		formats := []string{
+			"January 2, 2006",
+			"Jan 2, 2006", 
+			"2006-01-02",
+			"1/2/2006",
+			"01/02/2006",
+		}
+		
+		for _, format := range formats {
+			if dt, err := time.Parse(format, dateStr); err == nil {
+				return &dt
+			}
+		}
+	}
+	
+	return nil
 }
 
 type AudibleScraperProvider struct {
