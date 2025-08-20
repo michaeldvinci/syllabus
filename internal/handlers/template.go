@@ -305,6 +305,7 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
   }
 }
 </style>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
 </head>
 <body>
   <div class="topbar">

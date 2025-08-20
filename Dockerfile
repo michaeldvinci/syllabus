@@ -10,4 +10,5 @@ FROM golang:1.24-alpine
 ENV SYLLABUS_CONFIG=/config/books.yaml
 WORKDIR /app
 COPY --from=build /app/syllabus /app/syllabus
+COPY --from=build /app/app/res /app/res
 ENTRYPOINT /app/syllabus "$SYLLABUS_CONFIG"
