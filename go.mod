@@ -1,4 +1,4 @@
-module Syllabus
+module github.com/michaeldvinci/syllabus
 
 go 1.24.4
 
