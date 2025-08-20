@@ -2,6 +2,17 @@ name: test
 
 on:
   push:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'README.md'
+      - '.github/workflows/**'
+  pull_request:
+    branches:
+      - '**'
+    paths-ignore:
+      - 'README.md'
+      - '.github/workflows/**'
 
 jobs:
   docker:
