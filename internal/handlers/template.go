@@ -57,6 +57,253 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
 .settings-panel .panel-section { padding: .5rem .25rem; }
 .settings-panel .panel-heading { font-weight: 700; font-size: .85rem; color: var(--muted); margin-bottom: .25rem; text-transform: uppercase; letter-spacing: .02em; }
 .settings-panel code { background: #f3f4f6; padding: .15rem .35rem; border-radius: .35rem; }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  body { margin: 1rem; }
+  
+  /* Hide table structure on mobile */
+  table, thead, tbody, th, td, tr { 
+    display: block; 
+  }
+  
+  /* Hide table headers */
+  thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  /* Style each row as a card */
+  tbody tr {
+    border: 1px solid var(--line);
+    border-radius: .5rem;
+    margin-bottom: 1rem;
+    padding: 0;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  }
+  
+  tbody tr:nth-child(even) {
+    background: #fff;
+  }
+  
+  tbody tr:hover {
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  }
+  
+  /* Remove sticky positioning */
+  th:first-child, td:first-child { 
+    position: static;
+    z-index: auto;
+  }
+  
+  /* Series title and links at the top */
+  tbody td:first-child {
+    padding: .75rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--head-bg);
+    border-radius: .5rem .5rem 0 0;
+  }
+  
+  .series-cell {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .75rem;
+  }
+  
+  .series-title {
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
+  
+  .links {
+    gap: .5rem;
+  }
+  
+  .pill {
+    font-size: .8rem;
+    padding: .35rem .6rem;
+  }
+  
+  /* Platform sections underneath */
+  tbody td:nth-child(n+2) {
+    border-bottom: none;
+    padding: .5rem .75rem;
+  }
+  
+  /* Group Audible data */
+  tbody td:nth-child(2) {
+    border-top: 1px solid var(--line);
+    padding-top: .75rem;
+    position: relative;
+  }
+  
+  tbody td:nth-child(2)::before {
+    content: "Audible";
+    display: block;
+    font-weight: 600;
+    color: var(--aud);
+    margin-bottom: .5rem;
+    font-size: .9rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  
+  /* Group Amazon data */
+  tbody td:nth-child(5) {
+    border-top: 1px solid var(--line);
+    padding-top: .75rem;
+    position: relative;
+  }
+  
+  tbody td:nth-child(5)::before {
+    content: "Amazon";
+    display: block;
+    font-weight: 600;
+    color: var(--amz);
+    margin-bottom: .5rem;
+    font-size: .9rem;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  
+  /* Style data cells with labels */
+  tbody td:nth-child(n+2) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 2rem;
+  }
+  
+  tbody td:nth-child(2)::after { content: "Count"; }
+  tbody td:nth-child(3)::after { content: "Latest"; }
+  tbody td:nth-child(4)::after { content: "Next"; }
+  tbody td:nth-child(5)::after { content: "Count"; }
+  tbody td:nth-child(6)::after { content: "Latest"; }
+  tbody td:nth-child(7)::after { content: "Next"; }
+  
+  tbody td:nth-child(n+2)::after {
+    font-weight: 500;
+    color: var(--muted);
+    font-size: .85rem;
+    order: -1;
+  }
+  
+  /* Last cell rounded bottom */
+  tbody td:last-child {
+    border-radius: 0 0 .5rem .5rem;
+    padding-bottom: .75rem;
+  }
+  
+  /* Adjust badges and dates for mobile */
+  .badge {
+    font-size: .9rem;
+    min-width: 2em;
+  }
+  
+  .date {
+    font-size: .9rem;
+  }
+}
+
+/* Tablet adjustments */
+@media (max-width: 1024px) and (min-width: 769px) {
+  body { margin: 1.5rem; }
+  table { font-size: .9rem; }
+  th, td { padding: .45rem .6rem; }
+  .pill { font-size: .7rem; }
+}
+
+/* Alphabetical index */
+.alpha-index {
+  position: fixed;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(10px);
+  border-radius: .5rem;
+  padding: .5rem .25rem;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  z-index: 20;
+  user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .3s ease, visibility .3s ease, transform .3s ease;
+  transform: translateY(-50%) translateX(20px);
+}
+
+.alpha-index.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+
+.alpha-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: .25rem;
+  transition: all .15s ease;
+  text-decoration: none;
+}
+
+.alpha-letter:hover,
+.alpha-letter:focus {
+  background: var(--row-hover);
+  color: var(--text);
+  outline: none;
+}
+
+.alpha-letter.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.alpha-letter.disabled {
+  color: #d1d5db;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Hide on desktop by default, show on mobile/tablet */
+@media (max-width: 1024px) {
+  .alpha-index {
+    display: flex;
+  }
+}
+
+@media (min-width: 1025px) {
+  .alpha-index {
+    display: none;
+  }
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 768px) {
+  .alpha-index {
+    right: .5rem;
+    padding: .4rem .2rem;
+  }
+  
+  .alpha-letter {
+    width: 1.3rem;
+    height: 1.3rem;
+    font-size: .65rem;
+  }
+}
 </style>
 </head>
 <body>
@@ -110,6 +357,37 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
       {{ end }}
     </tbody>
   </table>
+  
+  <!-- Alphabetical Index -->
+  <div class="alpha-index" id="alphaIndex">
+    <div class="alpha-letter" data-letter="A">A</div>
+    <div class="alpha-letter" data-letter="B">B</div>
+    <div class="alpha-letter" data-letter="C">C</div>
+    <div class="alpha-letter" data-letter="D">D</div>
+    <div class="alpha-letter" data-letter="E">E</div>
+    <div class="alpha-letter" data-letter="F">F</div>
+    <div class="alpha-letter" data-letter="G">G</div>
+    <div class="alpha-letter" data-letter="H">H</div>
+    <div class="alpha-letter" data-letter="I">I</div>
+    <div class="alpha-letter" data-letter="J">J</div>
+    <div class="alpha-letter" data-letter="K">K</div>
+    <div class="alpha-letter" data-letter="L">L</div>
+    <div class="alpha-letter" data-letter="M">M</div>
+    <div class="alpha-letter" data-letter="N">N</div>
+    <div class="alpha-letter" data-letter="O">O</div>
+    <div class="alpha-letter" data-letter="P">P</div>
+    <div class="alpha-letter" data-letter="Q">Q</div>
+    <div class="alpha-letter" data-letter="R">R</div>
+    <div class="alpha-letter" data-letter="S">S</div>
+    <div class="alpha-letter" data-letter="T">T</div>
+    <div class="alpha-letter" data-letter="U">U</div>
+    <div class="alpha-letter" data-letter="V">V</div>
+    <div class="alpha-letter" data-letter="W">W</div>
+    <div class="alpha-letter" data-letter="X">X</div>
+    <div class="alpha-letter" data-letter="Y">Y</div>
+    <div class="alpha-letter" data-letter="Z">Z</div>
+  </div>
+  
   <script>
   (function(){
     const table = document.querySelector('table');
@@ -186,6 +464,189 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
         if (!panel.contains(e.target) && e.target !== btn) closePanel();
       }, true);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+    }
+
+    // Alphabetical Index Navigation
+    const alphaIndex = document.getElementById('alphaIndex');
+    if (alphaIndex && tbody) {
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      let hideTimeout;
+      let isInteracting = false;
+      const availableLetters = new Set();
+      
+      // Find which letters have entries
+      rows.forEach(row => {
+        const titleCell = row.querySelector('td:first-child .series-title');
+        if (titleCell) {
+          const firstLetter = titleCell.textContent.trim().charAt(0).toUpperCase();
+          if (firstLetter.match(/[A-Z]/)) {
+            availableLetters.add(firstLetter);
+          }
+        }
+      });
+      
+      // Auto-hide functionality
+      const showIndex = () => {
+        alphaIndex.classList.add('visible');
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(() => {
+          if (!isInteracting) {
+            alphaIndex.classList.remove('visible');
+          }
+        }, 2000); // Hide after 2 seconds of inactivity
+      };
+      
+      const hideIndex = () => {
+        if (!isInteracting) {
+          alphaIndex.classList.remove('visible');
+        }
+      };
+      
+      const startInteracting = () => {
+        isInteracting = true;
+        showIndex();
+      };
+      
+      const stopInteracting = () => {
+        isInteracting = false;
+        hideTimeout = setTimeout(hideIndex, 1000);
+      };
+      
+      // Show on scroll
+      let scrollTimeout;
+      window.addEventListener('scroll', () => {
+        showIndex();
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          if (!isInteracting) {
+            hideIndex();
+          }
+        }, 1500);
+      });
+      
+      // Show on touch near the index area
+      document.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        const rightEdge = window.innerWidth - 100; // Show if touch within 100px of right edge
+        if (touch.clientX > rightEdge) {
+          showIndex();
+        }
+      });
+      
+      // Update letter states
+      const letters = alphaIndex.querySelectorAll('.alpha-letter');
+      letters.forEach(letter => {
+        const letterValue = letter.dataset.letter;
+        if (!availableLetters.has(letterValue)) {
+          letter.classList.add('disabled');
+        }
+      });
+      
+      // Find first row starting with letter
+      const findRowByLetter = (letter) => {
+        return rows.find(row => {
+          const titleCell = row.querySelector('td:first-child .series-title');
+          if (titleCell) {
+            const firstLetter = titleCell.textContent.trim().charAt(0).toUpperCase();
+            return firstLetter === letter;
+          }
+          return false;
+        });
+      };
+      
+      // Smooth scroll to element
+      const scrollToElement = (element) => {
+        const offset = window.innerWidth <= 768 ? 80 : 120; // Account for mobile/desktop differences
+        const elementPosition = element.getBoundingClientRect().top + window.scrollY - offset;
+        
+        window.scrollTo({
+          top: elementPosition,
+          behavior: 'smooth'
+        });
+      };
+      
+      // Handle letter clicks
+      letters.forEach(letter => {
+        if (!letter.classList.contains('disabled')) {
+          letter.addEventListener('click', () => {
+            const targetLetter = letter.dataset.letter;
+            const targetRow = findRowByLetter(targetLetter);
+            
+            if (targetRow) {
+              // Remove previous active state
+              letters.forEach(l => l.classList.remove('active'));
+              // Add active state to clicked letter
+              letter.classList.add('active');
+              
+              // Scroll to the row
+              scrollToElement(targetRow);
+              
+              // Remove active state after a short delay
+              setTimeout(() => {
+                letter.classList.remove('active');
+              }, 1500);
+            }
+          });
+          
+          // Show index when hovering over letters
+          letter.addEventListener('mouseenter', showIndex);
+        }
+      });
+      
+      // Handle touch events for drag navigation
+      let isDragging = false;
+      let startY = 0;
+      
+      const handleTouchStart = (e) => {
+        isDragging = true;
+        startY = e.touches[0].clientY;
+        startInteracting();
+        e.preventDefault();
+      };
+      
+      const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        
+        const currentY = e.touches[0].clientY;
+        const indexRect = alphaIndex.getBoundingClientRect();
+        const relativeY = currentY - indexRect.top;
+        
+        // Find which letter we're over
+        const letterHeight = indexRect.height / letters.length;
+        const letterIndex = Math.floor(relativeY / letterHeight);
+        
+        if (letterIndex >= 0 && letterIndex < letters.length) {
+          const targetLetter = letters[letterIndex];
+          if (!targetLetter.classList.contains('disabled')) {
+            const targetRow = findRowByLetter(targetLetter.dataset.letter);
+            if (targetRow) {
+              // Clear all active states
+              letters.forEach(l => l.classList.remove('active'));
+              // Set current letter as active
+              targetLetter.classList.add('active');
+              // Scroll to row
+              scrollToElement(targetRow);
+            }
+          }
+        }
+        
+        e.preventDefault();
+      };
+      
+      const handleTouchEnd = (e) => {
+        isDragging = false;
+        stopInteracting();
+        // Remove all active states after touch ends
+        setTimeout(() => {
+          letters.forEach(l => l.classList.remove('active'));
+        }, 1000);
+        e.preventDefault();
+      };
+      
+      // Add touch event listeners
+      alphaIndex.addEventListener('touchstart', handleTouchStart, { passive: false });
+      alphaIndex.addEventListener('touchmove', handleTouchMove, { passive: false });
+      alphaIndex.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
   })();
   </script>
