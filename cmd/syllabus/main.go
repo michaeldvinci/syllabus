@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/michaeldvinci/syllabus/internal/auth"
 	"github.com/michaeldvinci/syllabus/internal/cache"
 	"github.com/michaeldvinci/syllabus/internal/handlers"
 	"github.com/michaeldvinci/syllabus/internal/models"
@@ -40,6 +41,25 @@ func main() {
 		},
 	}
 
+	// Initialize authentication store with file persistence
+	dataDir := "./data"
+	authStore := auth.NewStoreWithFile(filepath.Join(dataDir, "users.json"))
+	
+	// Create default admin user if it doesn't exist
+	_, err = authStore.CreateUserWithRole("admin", "admin", auth.RoleAdmin)
+	if err != nil && err != auth.ErrUserExists {
+		log.Fatalf("failed to create default admin user: %v", err)
+	}
+	if err == nil {
+		log.Printf("created default admin user (username: admin, password: admin)")
+	} else {
+		log.Printf("loaded existing users from %s", filepath.Join(dataDir, "users.json"))
+	}
+
+	// Initialize authentication middleware and handlers
+	authMiddleware := auth.NewMiddleware(authStore)
+	authHandlers := auth.NewAuthHandlers(authStore)
+
 	// Initialize application
 	app := &handlers.App{
 		Provider:    provider,
@@ -48,11 +68,21 @@ func main() {
 		RefreshChan: make(chan bool, 1),
 	}
 
-	// Setup HTTP routes
-	http.HandleFunc("/", app.HandleIndex)
-	http.HandleFunc("/api/series", app.HandleAPI)
-	http.HandleFunc("/events", app.HandleEvents)
-	http.HandleFunc("/calendar.ics", app.HandleICal)
+	// Setup authentication routes (no middleware needed)
+	http.HandleFunc("/login", authHandlers.HandleLogin)
+	http.HandleFunc("/logout", authHandlers.HandleLogout)
+	http.HandleFunc("/api/auth", authMiddleware.OptionalAuth(authHandlers.HandleAPI))
+	
+	// Setup admin-only routes
+	http.HandleFunc("/api/users", authMiddleware.RequireAdmin(authHandlers.HandleListUsers))
+	http.HandleFunc("/api/users/create", authMiddleware.RequireAdmin(authHandlers.HandleCreateUser))
+	http.HandleFunc("/api/users/reset-password", authMiddleware.RequireAdmin(authHandlers.HandleResetPassword))
+
+	// Setup protected HTTP routes with authentication middleware
+	http.HandleFunc("/", authMiddleware.RequireAuth(app.HandleIndex))
+	http.HandleFunc("/api/series", authMiddleware.RequireAuth(app.HandleAPI))
+	http.HandleFunc("/events", authMiddleware.RequireAuth(app.HandleEvents))
+	http.HandleFunc("/calendar.ics", authMiddleware.RequireAuth(app.HandleICal))
 	
 	// Serve static files (favicon, logo) - check for local vs docker paths
 	staticDir := "./app/res/"

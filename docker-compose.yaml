@@ -3,6 +3,7 @@ services:
     ports:
       - "8081:8080"
     # image: michaeldvinci/syllabus:latest
-    image: local-syllabus:0.20
+    image: local-syllabus:0.21
     volumes:
       - ./config:/config
+      - ./data:/data

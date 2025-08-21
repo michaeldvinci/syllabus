@@ -1,3 +1,15 @@
 Syllabus
 .DS_Store
 !cmd/*
+
+# User data persistence
+/data/
+/test_data/
+
+# Build artifacts
+syllabus
+*.exe
+
+# Temporary files
+*.tmp
+*.log

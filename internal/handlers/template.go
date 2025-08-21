@@ -565,6 +565,208 @@ input:checked + .toggle-slider:before {
     font-size: .65rem;
   }
 }
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--bg);
+  margin: 5% auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--head-bg);
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+
+.close {
+  color: var(--muted);
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close:hover,
+.close:focus {
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.user-section {
+  margin-bottom: 2rem;
+}
+
+.user-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.message {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+
+.message.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+[data-theme="dark"] .message.success {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-color: #047857;
+}
+
+[data-theme="dark"] .message.error {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-color: #dc2626;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.users-table th,
+.users-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.users-table th {
+  background: var(--head-bg);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.users-table td {
+  color: var(--text);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.role-admin {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.role-user {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+[data-theme="dark"] .role-admin {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .role-user {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.reset-btn {
+  padding: 0.25rem 0.5rem;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.reset-btn:hover {
+  background: #d97706;
+}
+
+[data-theme="dark"] .reset-btn {
+  background: #f59e0b;
+}
+
+[data-theme="dark"] .reset-btn:hover {
+  background: #d97706;
+}
 </style>
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
@@ -588,6 +790,28 @@ input:checked + .toggle-slider:before {
               </label>
               <span class="theme-label">Dark</span>
             </div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Authentication</div>
+          <div class="panel-content">
+            {{ if .Authenticated }}
+              <div style="margin-bottom: 0.75rem;">
+                <small>Logged in as: <strong>{{ .User.Username }}</strong> ({{ .User.Role }})</small>
+              </div>
+              {{ if eq .User.Role "admin" }}
+                <button onclick="showUserManagement()" class="export-btn" style="background: #059669; margin-right: 0.5rem;">
+                  👥 Manage Users
+                </button>
+              {{ end }}
+              <button onclick="logout()" class="export-btn" style="background: #dc2626; color: white;">
+                🚪 Sign Out
+              </button>
+            {{ else }}
+              <a href="/login" class="export-btn">
+                🔐 Sign In
+              </a>
+            {{ end }}
           </div>
         </div>
         <div class="panel-section">
@@ -677,6 +901,74 @@ input:checked + .toggle-slider:before {
     <div class="alpha-letter" data-letter="X">X</div>
     <div class="alpha-letter" data-letter="Y">Y</div>
     <div class="alpha-letter" data-letter="Z">Z</div>
+  </div>
+  
+  <!-- User Management Modal -->
+  <div id="userModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>User Management</h2>
+        <span class="close" onclick="closeUserManagement()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="user-section">
+          <h3>Create New User</h3>
+          <form id="createUserForm">
+            <div class="form-group">
+              <label for="newUsername">Username:</label>
+              <input type="text" id="newUsername" required>
+            </div>
+            <div class="form-group">
+              <label for="newPassword">Password:</label>
+              <input type="password" id="newPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="newRole">Role:</label>
+              <select id="newRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button type="submit" class="export-btn">Create User</button>
+          </form>
+          <div id="createUserMessage" class="message" style="display: none;"></div>
+        </div>
+        
+        <div class="user-section">
+          <h3>Existing Users</h3>
+          <div id="usersList">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Password Reset Modal -->
+  <div id="resetPasswordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Reset Password</h2>
+        <span class="close" onclick="closeResetPasswordModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="resetPasswordForm">
+          <div class="form-group">
+            <label for="resetUsername">Username:</label>
+            <input type="text" id="resetUsername" readonly>
+          </div>
+          <div class="form-group">
+            <label for="resetNewPassword">New Password:</label>
+            <input type="password" id="resetNewPassword" required>
+          </div>
+          <div class="form-group">
+            <label for="resetConfirmPassword">Confirm New Password:</label>
+            <input type="password" id="resetConfirmPassword" required>
+          </div>
+          <button type="submit" class="export-btn" style="background: #f59e0b;">Reset Password</button>
+          <button type="button" onclick="closeResetPasswordModal()" class="export-btn" style="background: #6b7280; margin-left: 0.5rem;">Cancel</button>
+        </form>
+        <div id="resetPasswordMessage" class="message" style="display: none;"></div>
+      </div>
+    </div>
   </div>
   
   <script>
@@ -959,6 +1251,198 @@ input:checked + .toggle-slider:before {
       alphaIndex.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
   })();
+
+  // Authentication functions
+  function logout() {
+    fetch('/logout', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = '/login';
+      }
+    })
+    .catch(error => {
+      console.error('Logout error:', error);
+      // Fallback to redirect
+      window.location.href = '/logout';
+    });
+  }
+
+  // User management functions
+  function showUserManagement() {
+    document.getElementById('userModal').style.display = 'block';
+    loadUsers();
+  }
+
+  function closeUserManagement() {
+    document.getElementById('userModal').style.display = 'none';
+    clearCreateUserForm();
+  }
+
+  function clearCreateUserForm() {
+    document.getElementById('createUserForm').reset();
+    const message = document.getElementById('createUserMessage');
+    message.style.display = 'none';
+    message.className = 'message';
+  }
+
+  function showMessage(elementId, message, isSuccess) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = 'message ' + (isSuccess ? 'success' : 'error');
+    element.style.display = 'block';
+  }
+
+  function loadUsers() {
+    fetch('/api/users')
+      .then(response => response.json())
+      .then(data => {
+        const usersContainer = document.getElementById('usersList');
+        if (data.users && data.users.length > 0) {
+          const table = document.createElement('table');
+          table.className = 'users-table';
+          
+          const header = table.createTHead();
+          const headerRow = header.insertRow();
+          headerRow.innerHTML = '<th>Username</th><th>Role</th><th>Created</th><th>Actions</th>';
+          
+          const tbody = table.createTBody();
+          data.users.forEach(user => {
+            const row = tbody.insertRow();
+            const createdDate = new Date(user.created_at).toLocaleDateString();
+            row.innerHTML = '<td>' + user.username + '</td><td><span class="role-badge role-' + user.role + '">' + user.role + '</span></td><td>' + createdDate + '</td><td><button class="reset-btn" onclick="showResetPasswordModal(\'' + user.username + '\')">Reset Password</button></td>';
+          });
+          
+          usersContainer.innerHTML = '';
+          usersContainer.appendChild(table);
+        } else {
+          usersContainer.innerHTML = '<p>No users found.</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Error loading users:', error);
+        document.getElementById('usersList').innerHTML = '<p>Error loading users.</p>';
+      });
+  }
+
+  // Handle create user form submission
+  document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('newUsername').value;
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
+    
+    fetch('/api/users/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+        role: role
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showMessage('createUserMessage', data.message, true);
+        clearCreateUserForm();
+        loadUsers(); // Refresh the user list
+      } else {
+        showMessage('createUserMessage', data.message, false);
+      }
+    })
+    .catch(error => {
+      console.error('Error creating user:', error);
+      showMessage('createUserMessage', 'Error creating user', false);
+    });
+  });
+
+  // Close modal when clicking outside of it
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('userModal');
+    if (event.target === modal) {
+      closeUserManagement();
+    }
+    
+    const resetModal = document.getElementById('resetPasswordModal');
+    if (event.target === resetModal) {
+      closeResetPasswordModal();
+    }
+  });
+
+  // Password reset functions
+  function showResetPasswordModal(username) {
+    document.getElementById('resetUsername').value = username;
+    document.getElementById('resetNewPassword').value = '';
+    document.getElementById('resetConfirmPassword').value = '';
+    const message = document.getElementById('resetPasswordMessage');
+    message.style.display = 'none';
+    message.className = 'message';
+    document.getElementById('resetPasswordModal').style.display = 'block';
+  }
+
+  function closeResetPasswordModal() {
+    document.getElementById('resetPasswordModal').style.display = 'none';
+  }
+
+  // Handle reset password form submission
+  document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('resetUsername').value;
+    const newPassword = document.getElementById('resetNewPassword').value;
+    const confirmPassword = document.getElementById('resetConfirmPassword').value;
+    
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      showMessage('resetPasswordMessage', 'Passwords do not match', false);
+      return;
+    }
+    
+    // Validate password length
+    if (newPassword.length < 3) {
+      showMessage('resetPasswordMessage', 'Password must be at least 3 characters long', false);
+      return;
+    }
+    
+    fetch('/api/users/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: username,
+        new_password: newPassword
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showMessage('resetPasswordMessage', data.message, true);
+        // Clear form fields
+        document.getElementById('resetNewPassword').value = '';
+        document.getElementById('resetConfirmPassword').value = '';
+        // Close modal after a short delay
+        setTimeout(() => {
+          closeResetPasswordModal();
+        }, 1500);
+      } else {
+        showMessage('resetPasswordMessage', data.message, false);
+      }
+    })
+    .catch(error => {
+      console.error('Error resetting password:', error);
+      showMessage('resetPasswordMessage', 'Error resetting password', false);
+    });
+  });
 
   // Live refresh via Server-Sent Events
   (function() {

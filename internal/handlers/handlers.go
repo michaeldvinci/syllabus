@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/michaeldvinci/syllabus/internal/auth"
 	"github.com/michaeldvinci/syllabus/internal/cache"
 	"github.com/michaeldvinci/syllabus/internal/models"
 	"github.com/michaeldvinci/syllabus/internal/utils"
@@ -41,6 +42,8 @@ type Page struct {
 	Rows        []Row
 	Now         string
 	CalendarURL string
+	User        *auth.User
+	Authenticated bool
 }
 
 // HandleIndex serves the main HTML page
@@ -104,11 +107,16 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 			return "http"
 		}(), r.Host)
 
+	// Get current user from context if available
+	user, authenticated := auth.GetUserFromContext(r)
+	
 	tpl := template.Must(template.New("idx").Parse(IndexHTML))
 	if err := tpl.Execute(w, Page{
 		Rows:        rows, 
 		Now:         time.Now().Format(time.RFC822),
 		CalendarURL: calendarURL,
+		User:        user,
+		Authenticated: authenticated,
 	}); err != nil {
 		http.Error(w, err.Error(), 500)
 	}
