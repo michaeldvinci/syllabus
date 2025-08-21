@@ -52,6 +52,7 @@ func main() {
 	http.HandleFunc("/", app.HandleIndex)
 	http.HandleFunc("/api/series", app.HandleAPI)
 	http.HandleFunc("/events", app.HandleEvents)
+	http.HandleFunc("/calendar.ics", app.HandleICal)
 	
 	// Serve static files (favicon, logo) - check for local vs docker paths
 	staticDir := "./app/res/"
