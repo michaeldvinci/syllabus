@@ -206,6 +206,77 @@ input:checked + .toggle-slider:before {
   color: #e5e7eb;
 }
 
+/* Export button styling */
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+  background: #3b82f6;
+  color: white;
+  text-decoration: none;
+  border-radius: .375rem;
+  font-size: .85rem;
+  font-weight: 500;
+  transition: background-color .15s ease;
+}
+
+.export-btn:hover {
+  background: #2563eb;
+  color: white;
+}
+
+.export-btn:active {
+  background: #1d4ed8;
+}
+
+[data-theme="dark"] .export-btn {
+  background: #2563eb;
+}
+
+[data-theme="dark"] .export-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Subscription info styling */
+.subscription-info {
+  margin-top: .75rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--line);
+}
+
+.subscription-info small {
+  display: block;
+  margin-bottom: .35rem;
+  color: var(--muted);
+}
+
+.subscription-url {
+  display: block;
+  padding: .4rem .5rem;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: .25rem;
+  font-size: .75rem;
+  word-break: break-all;
+  user-select: all;
+  cursor: pointer;
+}
+
+.subscription-url:hover {
+  background: #f1f5f9;
+}
+
+[data-theme="dark"] .subscription-url {
+  background: #2b2b2b;
+  color: #e5e7eb;
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .subscription-url:hover {
+  background: #374151;
+}
+
 [data-theme="dark"] .toggle-slider {
   background: #4b5563;
 }
@@ -516,6 +587,16 @@ input:checked + .toggle-slider:before {
                 <span class="toggle-slider"></span>
               </label>
               <span class="theme-label">Dark</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Calendar Subscription</div>
+          <div class="panel-content">
+            <a href="/calendar.ics" target="_blank" class="export-btn">📅 Subscribe to iCal</a>
+            <div class="subscription-info">
+              <small>Copy this URL to subscribe in your calendar app:</small>
+              <code class="subscription-url">{{ .CalendarURL }}</code>
             </div>
           </div>
         </div>

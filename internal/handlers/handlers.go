@@ -11,6 +11,7 @@ import (
 
 	"github.com/michaeldvinci/syllabus/internal/cache"
 	"github.com/michaeldvinci/syllabus/internal/models"
+	"github.com/michaeldvinci/syllabus/internal/utils"
 )
 
 // App holds the application state
@@ -37,8 +38,9 @@ type Row struct {
 
 // Page represents the complete page data for the HTML template
 type Page struct {
-	Rows []Row
-	Now  string
+	Rows        []Row
+	Now         string
+	CalendarURL string
 }
 
 // HandleIndex serves the main HTML page
@@ -93,8 +95,21 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	// Generate the calendar URL based on the request
+	calendarURL := fmt.Sprintf("%s://%s/calendar.ics", 
+		func() string {
+			if r.TLS != nil {
+				return "https"
+			}
+			return "http"
+		}(), r.Host)
+
 	tpl := template.Must(template.New("idx").Parse(IndexHTML))
-	if err := tpl.Execute(w, Page{Rows: rows, Now: time.Now().Format(time.RFC822)}); err != nil {
+	if err := tpl.Execute(w, Page{
+		Rows:        rows, 
+		Now:         time.Now().Format(time.RFC822),
+		CalendarURL: calendarURL,
+	}); err != nil {
 		http.Error(w, err.Error(), 500)
 	}
 }
@@ -104,6 +119,16 @@ func (a *App) HandleAPI(w http.ResponseWriter, r *http.Request) {
 	infos := a.collectAll()
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(infos)
+}
+
+// HandleICal serves the iCal export endpoint
+func (a *App) HandleICal(w http.ResponseWriter, r *http.Request) {
+	infos := a.collectAll()
+	icalContent := utils.GenerateICal(infos)
+
+	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"book-releases.ics\"")
+	w.Write([]byte(icalContent))
 }
 
 func (a *App) collectAll() []models.SeriesInfo {
