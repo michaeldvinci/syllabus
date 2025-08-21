@@ -5,7 +5,7 @@ const IndexHTML = `
 <html>
 <head>
 <meta charset="utf-8">
-<title>Audiobook / Ebook Series Tracker</title>
+<title>Syllabus</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 :root {
@@ -19,7 +19,65 @@ const IndexHTML = `
   --aud: #0ea5e9; /* cyan-ish */
   --amz: #f59e0b; /* amber-ish */
 }
-body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 2rem; color: var(--text); background: var(--bg); }
+
+[data-theme="dark"] {
+  --bg: #2b2b2b;
+  --text: #a9b7c6;
+  --muted: #808080;
+  --line: #3c3f41;
+  --head-bg: #3c3f41;
+  --head-shadow: 0 1px 0 rgba(255,255,255,.03);
+  --row-hover: #3c3f41;
+}
+
+/* Dark mode overrides for table elements */
+[data-theme="dark"] table {
+  background: #313335;
+  border-color: var(--line);
+}
+
+[data-theme="dark"] tbody tr {
+  background: #313335;
+}
+
+[data-theme="dark"] tbody tr:nth-child(even) {
+  background: #3c3f41;
+}
+
+[data-theme="dark"] tbody tr:hover {
+  background: #4c5052;
+}
+
+[data-theme="dark"] .settings-btn {
+  background: #3c3f41;
+  color: var(--text);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .settings-btn:hover {
+  background: #4c5052;
+}
+
+[data-theme="dark"] .settings-panel {
+  background: #3c3f41;
+  border-color: var(--line);
+}
+body { 
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; 
+  margin: 0; 
+  color: var(--text); 
+  background: var(--bg); 
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+/* Content area with scrolling */
+.content-area {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.5rem;
+}
+
 table { border-collapse: separate; border-spacing: 0; width: 100%; background: #fff; border: 1px solid var(--line); border-radius: .5rem; overflow: hidden; }
 thead th { position: sticky; top: 0; background: var(--head-bg); z-index: 3; }
 thead tr:nth-child(2) th { top: 2.5rem; z-index: 2; }
@@ -35,8 +93,8 @@ thead th:first-child { z-index: 4; }
 /* Series cell with inline source pills */
 .series-cell { display: flex; align-items: center; gap: .5rem; }
 .series-title { font-weight: 600; }
-.links { display: inline-flex; gap: .35rem; }
-.pill { display: inline-flex; align-items: center; justify-content: center; font-size: .72rem; line-height: 1; padding: .28rem .45rem; border-radius: 999px; text-decoration: none; border: 1px solid rgba(0,0,0,.06); }
+.links { display: inline-flex; gap: .35rem; min-width: 4rem; }
+.pill { display: inline-flex; align-items: center; justify-content: center; font-size: .72rem; line-height: 1; padding: .28rem .45rem; border-radius: 999px; text-decoration: none; border: 1px solid rgba(0,0,0,.06); width: 1.8rem; }
 .pill-aud { background: rgba(14,165,233,.08); color: var(--aud); }
 .pill-amz { background: rgba(245,158,11,.10); color: var(--amz); }
 .badge { display: inline-block; min-width: 1.5em; padding: .15rem .5rem; border-radius: .5rem; background: #eef2ff; font-weight: 600; text-align: center; }
@@ -48,7 +106,32 @@ thead th:first-child { z-index: 4; }
 th.sort-asc::after { content: '\25B4'; opacity: .8; }
 th.sort-desc::after { content: '\25BE'; opacity: .8; }
 /* Top bar and settings panel */
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.topbar { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 1rem; 
+  padding: .75rem 1.5rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 1.44rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.logo {
+  height: 1.99rem;
+  width: auto;
+}
 .settings-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .5rem; border: 1px solid var(--line); background: #fff; box-shadow: var(--head-shadow); cursor: pointer; font-size: 1.05rem; }
 .settings-btn:hover { background: #f8fafc; }
 .settings-btn:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
@@ -58,9 +141,116 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
 .settings-panel .panel-heading { font-weight: 700; font-size: .85rem; color: var(--muted); margin-bottom: .25rem; text-transform: uppercase; letter-spacing: .02em; }
 .settings-panel code { background: #f3f4f6; padding: .15rem .35rem; border-radius: .35rem; }
 
+/* Theme toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.theme-label {
+  font-size: .85rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 3rem;
+  height: 1.5rem;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #e5e7eb;
+  transition: .3s;
+  border-radius: 1.5rem;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 1.125rem;
+  width: 1.125rem;
+  left: .1875rem;
+  bottom: .1875rem;
+  background: white;
+  transition: .3s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+input:checked + .toggle-slider {
+  background: #3b82f6;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(1.5rem);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .settings-panel code {
+  background: #2b2b2b;
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .toggle-slider {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .toggle-slider:before {
+  background: #f3f4f6;
+}
+
+/* Dark mode count badge styling for better visibility */
+[data-theme="dark"] .count-aud {
+  background: rgba(14,165,233,.25);
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .count-amz {
+  background: rgba(245,158,11,.25);
+  color: #fbbf24;
+}
+
+/* Dark mode mobile card adjustments */
+@media (max-width: 768px) {
+  [data-theme="dark"] tbody tr {
+    background: #313335;
+    border-color: var(--line);
+  }
+  
+  [data-theme="dark"] tbody tr:nth-child(even) {
+    background: #313335;
+  }
+  
+  [data-theme="dark"] tbody tr:hover {
+    background: #313335;
+  }
+  
+  [data-theme="dark"] tbody td:first-child {
+    background: #3c3f41;
+    border-color: var(--line);
+  }
+}
+
 /* Mobile responsive styles */
 @media (max-width: 768px) {
-  body { margin: 1rem; }
+  .topbar { padding: .5rem 1rem; }
+  .topbar h1 { font-size: 1.27rem; }
+  .content-area { padding: 1rem; }
   
   /* Hide table structure on mobile */
   table, thead, tbody, th, td, tr { 
@@ -305,14 +495,30 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
   }
 }
 </style>
-<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
 <body>
   <div class="topbar">
-    <h1>Syllabus</h1>
+    <h1>
+      <img src="/static/syllabus_logo.png" alt="Syllabus Logo" class="logo">
+      Syllabus
+    </h1>
     <div class="settings-wrap">
       <button class="settings-btn" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel" title="Settings" aria-label="Settings">⚙️</button>
       <div class="settings-panel" id="settingsPanel" hidden>
+        <div class="panel-section">
+          <div class="panel-heading">Theme</div>
+          <div class="panel-content">
+            <div class="theme-toggle">
+              <span class="theme-label">Light</span>
+              <label class="toggle-switch">
+                <input type="checkbox" id="themeToggle">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="theme-label">Dark</span>
+            </div>
+          </div>
+        </div>
         <div class="panel-section">
           <div class="panel-heading">Generated at</div>
           <div class="panel-content"><code>{{ .Now }}</code></div>
@@ -320,7 +526,9 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
       </div>
     </div>
   </div>
-  <table>
+  
+  <div class="content-area">
+    <table>
     <thead>
       <tr>
         <th rowspan="2" scope="col" class="sortable" data-col="0" data-type="text">Series</th>
@@ -357,7 +565,8 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
       </tr>
       {{ end }}
     </tbody>
-  </table>
+    </table>
+  </div>
   
   <!-- Alphabetical Index -->
   <div class="alpha-index" id="alphaIndex">
@@ -465,6 +674,25 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
         if (!panel.contains(e.target) && e.target !== btn) closePanel();
       }, true);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+    }
+
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      // Load saved theme or default to light
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      const isDark = savedTheme === 'dark';
+      
+      // Apply theme
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      themeToggle.checked = isDark;
+      
+      // Handle toggle changes
+      themeToggle.addEventListener('change', () => {
+        const newTheme = themeToggle.checked ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+      });
     }
 
     // Alphabetical Index Navigation
@@ -649,6 +877,30 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
       alphaIndex.addEventListener('touchmove', handleTouchMove, { passive: false });
       alphaIndex.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
+  })();
+
+  // Live refresh via Server-Sent Events
+  (function() {
+    const eventSource = new EventSource('/events');
+    
+    eventSource.onmessage = function(event) {
+      if (event.data === 'refresh') {
+        // Show a brief notification
+        const notification = document.createElement('div');
+        notification.textContent = 'New entries added - refreshing...';
+        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--bg); color: var(--text); border: 1px solid var(--line); padding: 0.75rem 1rem; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; font-size: 0.9rem;';
+        document.body.appendChild(notification);
+        
+        // Refresh the page after a brief delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    };
+    
+    eventSource.onerror = function() {
+      console.log('SSE connection lost, will retry automatically');
+    };
   })();
   </script>
 </body>

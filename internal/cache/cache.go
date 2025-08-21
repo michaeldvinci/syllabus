@@ -47,3 +47,10 @@ func (c *Cache) Set(key string, v models.SeriesInfo) {
 	}
 	c.mu.Unlock()
 }
+
+// Clear removes all items from the cache
+func (c *Cache) Clear() {
+	c.mu.Lock()
+	c.items = make(map[string]cacheItem)
+	c.mu.Unlock()
+}

@@ -55,7 +55,7 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 	log.Printf("Amazon scraper: fetching %s from %s", e.Title, amzURL)
 	
 	// Add delay to avoid rate limiting (random between 1-3 seconds)
-	time.Sleep(time.Duration(800+time.Now().UnixNano()%1000) * time.Millisecond)
+	time.Sleep(time.Duration(400+time.Now().UnixNano()%600) * time.Millisecond)
 
 	req, err := http.NewRequest("GET", amzURL, nil)
 	if err != nil {
@@ -301,7 +301,7 @@ func (p *AmazonScraperProvider) extractPublicationDate(bookURL string) *time.Tim
 	log.Printf("Amazon scraper: fetching publication date from %s", bookURL)
 	
 	// Add delay to avoid rate limiting
-	time.Sleep(time.Duration(800+time.Now().UnixNano()%1000) * time.Millisecond)
+	time.Sleep(time.Duration(400+time.Now().UnixNano()%600) * time.Millisecond)
 	
 	req, err := http.NewRequest("GET", bookURL, nil)
 	if err != nil {
