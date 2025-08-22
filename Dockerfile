@@ -1,10 +1,11 @@
-FROM golang:1.24-alpine AS build
+FROM golang:1.24 AS build
+# RUN apk add --no-cache gcc musl-dev sqlite-dev
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN ls -la && ls -la cmd/
-RUN go build -o syllabus ./cmd/syllabus
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags '-linkmode external -extldflags "-static"' -o syllabus ./cmd/syllabus
 
 FROM golang:1.24-alpine
 ENV SYLLABUS_CONFIG=/config/books.yaml
