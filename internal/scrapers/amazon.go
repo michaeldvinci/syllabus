@@ -37,9 +37,17 @@ type AmazonScraperProvider struct {
 
 // Fetch retrieves series information by scraping Amazon pages
 func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, error) {
-	out := models.SeriesInfo{Title: e.Title}
+	// Explicitly clear all output fields to prevent variable reuse between scraping loops
+	out := models.SeriesInfo{
+		Title:             e.Title,
+		AmazonASIN:        e.AmazonASIN,
+		AmazonCount:       0,
+		AmazonLatestTitle: "",
+		AmazonLatestDate:  nil,
+		AmazonNextTitle:   "",
+		AmazonNextDate:    nil,
+	}
 	if !p.Enabled {
-		log.Printf("Amazon scraper: disabled for %s", e.Title)
 		return out, nil
 	}
 
@@ -48,20 +56,15 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 		amzURL = fmt.Sprintf("https://www.amazon.com/dp/%s", e.AmazonASIN)
 	}
 	if amzURL == "" {
-		log.Printf("Amazon scraper: no URL found for %s", e.Title)
 		return out, nil
 	}
-
-	log.Printf("Amazon scraper: fetching %s from %s", e.Title, amzURL)
 	
 	// Add delay to avoid rate limiting (random between 1-3 seconds)
 	time.Sleep(time.Duration(400+time.Now().UnixNano()%600) * time.Millisecond)
 
 	req, err := http.NewRequest("GET", amzURL, nil)
 	if err != nil {
-		log.Printf("Amazon scraper: failed to create request for %s: %v", e.Title, err)
-		out.Err = err
-		return out, err
+		return out, nil // Return empty data instead of error
 	}
 	// Set comprehensive headers to mimic a real browser and avoid bot detection
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
@@ -84,18 +87,12 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 
 	resp, err := p.Client.Do(req)
 	if err != nil {
-		log.Printf("Amazon scraper: HTTP request failed for %s: %v", e.Title, err)
-		out.Err = err
-		return out, err
+		return out, nil // Return empty data instead of error
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("Amazon scraper: HTTP %d for %s at %s", resp.StatusCode, e.Title, amzURL)
-		out.Err = fmt.Errorf("amazon: non-200 status %d", resp.StatusCode)
-		return out, out.Err
+		return out, nil // Return empty data instead of error
 	}
-
-	log.Printf("Amazon scraper: successfully fetched %s (status %d)", e.Title, resp.StatusCode)
 
 	// Handle gzip compression
 	var reader io.Reader = resp.Body
@@ -103,8 +100,7 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 		gzipReader, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			log.Printf("Amazon scraper: failed to create gzip reader for %s: %v", e.Title, err)
-			out.Err = err
-			return out, err
+			return out, nil // Return empty data instead of error
 		}
 		defer gzipReader.Close()
 		reader = gzipReader
@@ -113,8 +109,7 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 	body, err := io.ReadAll(reader)
 	if err != nil {
 		log.Printf("Amazon scraper: failed to read response body for %s: %v", e.Title, err)
-		out.Err = err
-		return out, err
+		return out, nil // Return empty data instead of error
 	}
 	html := string(body)
 
@@ -174,11 +169,30 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 		return out, nil
 	}
 	
-	// Step 1: Search for book count in collection-size element
-	countPattern := `\((\d+) book series\)`
-	reCount := regexp.MustCompile(countPattern)
-	if m := reCount.FindStringSubmatch(html); len(m) == 2 {
+	// Step 1: Search for book count in multiple patterns
+	// Pattern 1: (X book series)
+	countPattern1 := `\((\d+) book series\)`
+	reCount1 := regexp.MustCompile(countPattern1)
+	if m := reCount1.FindStringSubmatch(html); len(m) == 2 {
 		if n, err := strconv.Atoi(m[1]); err == nil {
+			out.AmazonCount = n
+		}
+	}
+	
+	// Pattern 2: collection-size (X books)
+	countPattern2 := `(?i)collection-size[^>]*>.*?(\d+)\s+books?`
+	reCount2 := regexp.MustCompile(countPattern2)
+	if m := reCount2.FindStringSubmatch(html); len(m) == 2 {
+		if n, err := strconv.Atoi(m[1]); err == nil && n > out.AmazonCount {
+			out.AmazonCount = n
+		}
+	}
+	
+	// Pattern 3: showing X of Y results
+	countPattern3 := `(?i)showing\s+\d+\s+of\s+(\d+)\s+results?`
+	reCount3 := regexp.MustCompile(countPattern3)
+	if m := reCount3.FindStringSubmatch(html); len(m) == 2 {
+		if n, err := strconv.Atoi(m[1]); err == nil && n > out.AmazonCount {
 			out.AmazonCount = n
 		}
 	}
@@ -202,10 +216,15 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 		log.Printf("Next: not found")
 	}
 
-	// Step 3: Find itemBookTitle elements to get book URLs
+	// Step 3: Find book elements - use only the most reliable pattern
 	bookTitlePattern := `(?is)<a\s+id=["']itemBookTitle_(\d+)["'][^>]*href=["']([^"']+)["'][^>]*>`
 	reBookTitle := regexp.MustCompile(bookTitlePattern)
 	bookMatches := reBookTitle.FindAllStringSubmatch(html, -1)
+	
+	// Only use book link count if no explicit count was found AND we have a reasonable number of links
+	if out.AmazonCount == 0 && len(bookMatches) > 0 && len(bookMatches) <= 50 {
+		out.AmazonCount = len(bookMatches)
+	}
 	
 	log.Printf("Found %d book links", len(bookMatches))
 
@@ -287,8 +306,20 @@ func (p *AmazonScraperProvider) Fetch(e models.SeriesIDs) (models.SeriesInfo, er
 		log.Printf("Amazon scraper: no book links found for %s", e.Title)
 	}
 
-	log.Printf("Amazon scraper: completed %s - Count: %d, Latest: %v, Next: %v", 
-		e.Title, out.AmazonCount, out.AmazonLatestDate, out.AmazonNextDate)
+	// Log final assigned values
+	var latest, next string
+	if out.AmazonLatestDate != nil {
+		latest = out.AmazonLatestDate.Format("2006-01-02")
+	} else {
+		latest = "none"
+	}
+	if out.AmazonNextDate != nil {
+		next = out.AmazonNextDate.Format("2006-01-02")
+	} else {
+		next = "none"
+	}
+	log.Printf("Amazon %s: count=%d, latest=%s, next=%s", e.Title, out.AmazonCount, latest, next)
+	
 	return out, nil
 }
 

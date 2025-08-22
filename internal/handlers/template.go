@@ -135,6 +135,47 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
 .settings-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .5rem; border: 1px solid var(--line); background: #fff; box-shadow: var(--head-shadow); cursor: pointer; font-size: 1.05rem; }
 .settings-btn:hover { background: #f8fafc; }
 .settings-btn:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
+
+.loading-spinner { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 2.25rem; 
+  height: 2.25rem; 
+  margin-right: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  position: relative;
+}
+.loading-spinner.active { opacity: 1; }
+
+.loading-spinner .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #6b7280;
+  position: absolute;
+  animation: spin-dots 1.2s linear infinite;
+}
+
+.loading-spinner .dot:nth-child(1) { transform: rotate(0deg) translate(8px) rotate(0deg); animation-delay: 0s; }
+.loading-spinner .dot:nth-child(2) { transform: rotate(45deg) translate(8px) rotate(-45deg); animation-delay: -0.15s; }
+.loading-spinner .dot:nth-child(3) { transform: rotate(90deg) translate(8px) rotate(-90deg); animation-delay: -0.3s; }
+.loading-spinner .dot:nth-child(4) { transform: rotate(135deg) translate(8px) rotate(-135deg); animation-delay: -0.45s; }
+.loading-spinner .dot:nth-child(5) { transform: rotate(180deg) translate(8px) rotate(-180deg); animation-delay: -0.6s; }
+.loading-spinner .dot:nth-child(6) { transform: rotate(225deg) translate(8px) rotate(-225deg); animation-delay: -0.75s; }
+.loading-spinner .dot:nth-child(7) { transform: rotate(270deg) translate(8px) rotate(-270deg); animation-delay: -0.9s; }
+.loading-spinner .dot:nth-child(8) { transform: rotate(315deg) translate(8px) rotate(-315deg); animation-delay: -1.05s; }
+
+@keyframes spin-dots {
+  0%, 20% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+  80%, 100% { opacity: 0.2; transform: scale(0.8); }
+}
+
+[data-theme="dark"] .loading-spinner .dot {
+  background: #9ca3af;
+}
 .settings-wrap { position: relative; }
 .settings-panel { position: absolute; right: 0; top: 2.8rem; width: 320px; max-width: calc(100vw - 2rem); background: #fff; border: 1px solid var(--line); border-radius: .5rem; box-shadow: 0 10px 20px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.06); padding: .75rem; z-index: 10; }
 .settings-panel .panel-section { padding: .5rem .25rem; }
@@ -283,6 +324,71 @@ input:checked + .toggle-slider:before {
 
 [data-theme="dark"] .toggle-slider:before {
   background: #f3f4f6;
+}
+
+/* Auto refresh slider styling */
+.auto-refresh-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.auto-refresh-label {
+  font-size: 0.9rem;
+  color: var(--text);
+  text-align: center;
+  font-weight: 500;
+}
+
+.auto-refresh-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.auto-refresh-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.auto-refresh-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.auto-refresh-markers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: -0.25rem;
+}
+
+[data-theme="dark"] .auto-refresh-slider {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .auto-refresh-slider::-webkit-slider-thumb {
+  background: #60a5fa;
+}
+
+[data-theme="dark"] .auto-refresh-slider::-moz-range-thumb {
+  background: #60a5fa;
 }
 
 /* Dark mode count badge styling for better visibility */
@@ -565,6 +671,208 @@ input:checked + .toggle-slider:before {
     font-size: .65rem;
   }
 }
+
+/* Modal styles */
+.modal {
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--bg);
+  margin: 5% auto;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--head-bg);
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+}
+
+.close {
+  color: var(--muted);
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close:hover,
+.close:focus {
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.user-section {
+  margin-bottom: 2rem;
+}
+
+.user-section h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.message {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+
+.message.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.message.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+[data-theme="dark"] .message.success {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-color: #047857;
+}
+
+[data-theme="dark"] .message.error {
+  background: #7f1d1d;
+  color: #fca5a5;
+  border-color: #dc2626;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.users-table th,
+.users-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.users-table th {
+  background: var(--head-bg);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.users-table td {
+  color: var(--text);
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.role-admin {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.role-user {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+[data-theme="dark"] .role-admin {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .role-user {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.reset-btn {
+  padding: 0.25rem 0.5rem;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.reset-btn:hover {
+  background: #d97706;
+}
+
+[data-theme="dark"] .reset-btn {
+  background: #f59e0b;
+}
+
+[data-theme="dark"] .reset-btn:hover {
+  background: #d97706;
+}
 </style>
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 </head>
@@ -575,6 +883,16 @@ input:checked + .toggle-slider:before {
       Syllabus
     </h1>
     <div class="settings-wrap">
+      <div class="loading-spinner" id="loadingSpinner" title="Processing data...">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
       <button class="settings-btn" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel" title="Settings" aria-label="Settings">⚙️</button>
       <div class="settings-panel" id="settingsPanel" hidden>
         <div class="panel-section">
@@ -587,6 +905,51 @@ input:checked + .toggle-slider:before {
                 <span class="toggle-slider"></span>
               </label>
               <span class="theme-label">Dark</span>
+            </div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Authentication</div>
+          <div class="panel-content">
+            {{ if .Authenticated }}
+              <div style="margin-bottom: 0.75rem;">
+                <small>Logged in as: <strong>{{ .User.Username }}</strong> ({{ .User.Role }})</small>
+              </div>
+              {{ if eq .User.Role "admin" }}
+                <button onclick="showUserManagement()" class="export-btn" style="background: #059669; margin-right: 0.5rem;">
+                  👥 Manage Users
+                </button>
+              {{ end }}
+              <button onclick="logout()" class="export-btn" style="background: #dc2626; color: white;">
+                🚪 Sign Out
+              </button>
+            {{ else }}
+              <a href="/login" class="export-btn">
+                🔐 Sign In
+              </a>
+            {{ end }}
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Data Refresh</div>
+          <div class="panel-content">
+            <button onclick="refreshData()" class="export-btn" id="refreshBtn">🔄 Refresh All Data</button>
+            <div id="refreshStatus" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted);"></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Auto Refresh</div>
+          <div class="panel-content">
+            <div class="auto-refresh-setting">
+              <label for="autoRefreshSlider" class="auto-refresh-label">Every <span id="autoRefreshValue">6</span> hours</label>
+              <input type="range" id="autoRefreshSlider" min="2" max="10" step="2" value="6" class="auto-refresh-slider">
+              <div class="auto-refresh-markers">
+                <span>2h</span>
+                <span>4h</span>
+                <span>6h</span>
+                <span>8h</span>
+                <span>10h</span>
+              </div>
             </div>
           </div>
         </div>
@@ -677,6 +1040,74 @@ input:checked + .toggle-slider:before {
     <div class="alpha-letter" data-letter="X">X</div>
     <div class="alpha-letter" data-letter="Y">Y</div>
     <div class="alpha-letter" data-letter="Z">Z</div>
+  </div>
+  
+  <!-- User Management Modal -->
+  <div id="userModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>User Management</h2>
+        <span class="close" onclick="closeUserManagement()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="user-section">
+          <h3>Create New User</h3>
+          <form id="createUserForm">
+            <div class="form-group">
+              <label for="newUsername">Username:</label>
+              <input type="text" id="newUsername" required>
+            </div>
+            <div class="form-group">
+              <label for="newPassword">Password:</label>
+              <input type="password" id="newPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="newRole">Role:</label>
+              <select id="newRole">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <button type="submit" class="export-btn">Create User</button>
+          </form>
+          <div id="createUserMessage" class="message" style="display: none;"></div>
+        </div>
+        
+        <div class="user-section">
+          <h3>Existing Users</h3>
+          <div id="usersList">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Password Reset Modal -->
+  <div id="resetPasswordModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Reset Password</h2>
+        <span class="close" onclick="closeResetPasswordModal()">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="resetPasswordForm">
+          <div class="form-group">
+            <label for="resetUsername">Username:</label>
+            <input type="text" id="resetUsername" readonly>
+          </div>
+          <div class="form-group">
+            <label for="resetNewPassword">New Password:</label>
+            <input type="password" id="resetNewPassword" required>
+          </div>
+          <div class="form-group">
+            <label for="resetConfirmPassword">Confirm New Password:</label>
+            <input type="password" id="resetConfirmPassword" required>
+          </div>
+          <button type="submit" class="export-btn" style="background: #f59e0b;">Reset Password</button>
+          <button type="button" onclick="closeResetPasswordModal()" class="export-btn" style="background: #6b7280; margin-left: 0.5rem;">Cancel</button>
+        </form>
+        <div id="resetPasswordMessage" class="message" style="display: none;"></div>
+      </div>
+    </div>
   </div>
   
   <script>
@@ -773,6 +1204,49 @@ input:checked + .toggle-slider:before {
         const newTheme = themeToggle.checked ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
+      });
+    }
+
+    // Auto refresh slider functionality
+    const autoRefreshSlider = document.getElementById('autoRefreshSlider');
+    const autoRefreshValue = document.getElementById('autoRefreshValue');
+    if (autoRefreshSlider && autoRefreshValue) {
+      // Load saved auto refresh interval or default to 6
+      const savedInterval = localStorage.getItem('autoRefreshInterval') || '6';
+      autoRefreshSlider.value = savedInterval;
+      autoRefreshValue.textContent = savedInterval;
+      
+      // Handle slider changes
+      autoRefreshSlider.addEventListener('input', () => {
+        const value = autoRefreshSlider.value;
+        autoRefreshValue.textContent = value;
+        localStorage.setItem('autoRefreshInterval', value);
+        
+        // Send update to server
+        fetch('/api/auto-refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            interval: parseInt(value)
+          })
+        }).catch(error => {
+          console.error('Error updating auto refresh interval:', error);
+        });
+      });
+      
+      // Set initial interval on server
+      fetch('/api/auto-refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          interval: parseInt(savedInterval)
+        })
+      }).catch(error => {
+        console.error('Error setting initial auto refresh interval:', error);
       });
     }
 
@@ -960,9 +1434,218 @@ input:checked + .toggle-slider:before {
     }
   })();
 
+  // Authentication functions
+  function logout() {
+    fetch('/logout', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        window.location.href = '/login';
+      }
+    })
+    .catch(error => {
+      console.error('Logout error:', error);
+      // Fallback to redirect
+      window.location.href = '/logout';
+    });
+  }
+
+  // User management functions
+  function showUserManagement() {
+    document.getElementById('userModal').style.display = 'block';
+    loadUsers();
+  }
+
+  function closeUserManagement() {
+    document.getElementById('userModal').style.display = 'none';
+    clearCreateUserForm();
+  }
+
+  function clearCreateUserForm() {
+    document.getElementById('createUserForm').reset();
+    const message = document.getElementById('createUserMessage');
+    message.style.display = 'none';
+    message.className = 'message';
+  }
+
+  function showMessage(elementId, message, isSuccess) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = 'message ' + (isSuccess ? 'success' : 'error');
+    element.style.display = 'block';
+  }
+
+  function loadUsers() {
+    fetch('/api/users')
+      .then(response => response.json())
+      .then(data => {
+        const usersContainer = document.getElementById('usersList');
+        if (data.users && data.users.length > 0) {
+          const table = document.createElement('table');
+          table.className = 'users-table';
+          
+          const header = table.createTHead();
+          const headerRow = header.insertRow();
+          headerRow.innerHTML = '<th>Username</th><th>Role</th><th>Created</th><th>Actions</th>';
+          
+          const tbody = table.createTBody();
+          data.users.forEach(user => {
+            const row = tbody.insertRow();
+            const createdDate = new Date(user.created_at).toLocaleDateString();
+            row.innerHTML = '<td>' + user.username + '</td><td><span class="role-badge role-' + user.role + '">' + user.role + '</span></td><td>' + createdDate + '</td><td><button class="reset-btn" onclick="showResetPasswordModal(\'' + user.username + '\')">Reset Password</button></td>';
+          });
+          
+          usersContainer.innerHTML = '';
+          usersContainer.appendChild(table);
+        } else {
+          usersContainer.innerHTML = '<p>No users found.</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Error loading users:', error);
+        document.getElementById('usersList').innerHTML = '<p>Error loading users.</p>';
+      });
+  }
+
+  // Handle create user form submission
+  document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('newUsername').value;
+    const password = document.getElementById('newPassword').value;
+    const role = document.getElementById('newRole').value;
+    
+    fetch('/api/users/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+        role: role
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showMessage('createUserMessage', data.message, true);
+        clearCreateUserForm();
+        loadUsers(); // Refresh the user list
+      } else {
+        showMessage('createUserMessage', data.message, false);
+      }
+    })
+    .catch(error => {
+      console.error('Error creating user:', error);
+      showMessage('createUserMessage', 'Error creating user', false);
+    });
+  });
+
+  // Close modal when clicking outside of it
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('userModal');
+    if (event.target === modal) {
+      closeUserManagement();
+    }
+    
+    const resetModal = document.getElementById('resetPasswordModal');
+    if (event.target === resetModal) {
+      closeResetPasswordModal();
+    }
+  });
+
+  // Password reset functions
+  function showResetPasswordModal(username) {
+    document.getElementById('resetUsername').value = username;
+    document.getElementById('resetNewPassword').value = '';
+    document.getElementById('resetConfirmPassword').value = '';
+    const message = document.getElementById('resetPasswordMessage');
+    message.style.display = 'none';
+    message.className = 'message';
+    document.getElementById('resetPasswordModal').style.display = 'block';
+  }
+
+  function closeResetPasswordModal() {
+    document.getElementById('resetPasswordModal').style.display = 'none';
+  }
+
+  // Handle reset password form submission
+  document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const username = document.getElementById('resetUsername').value;
+    const newPassword = document.getElementById('resetNewPassword').value;
+    const confirmPassword = document.getElementById('resetConfirmPassword').value;
+    
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      showMessage('resetPasswordMessage', 'Passwords do not match', false);
+      return;
+    }
+    
+    // Validate password length
+    if (newPassword.length < 3) {
+      showMessage('resetPasswordMessage', 'Password must be at least 3 characters long', false);
+      return;
+    }
+    
+    fetch('/api/users/reset-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: username,
+        new_password: newPassword
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showMessage('resetPasswordMessage', data.message, true);
+        // Clear form fields
+        document.getElementById('resetNewPassword').value = '';
+        document.getElementById('resetConfirmPassword').value = '';
+        // Close modal after a short delay
+        setTimeout(() => {
+          closeResetPasswordModal();
+        }, 1500);
+      } else {
+        showMessage('resetPasswordMessage', data.message, false);
+      }
+    })
+    .catch(error => {
+      console.error('Error resetting password:', error);
+      showMessage('resetPasswordMessage', 'Error resetting password', false);
+    });
+  });
+
   // Live refresh via Server-Sent Events
   (function() {
     const eventSource = new EventSource('/events');
+    const spinner = document.getElementById('loadingSpinner');
+    let activeJobs = 0;
+    let lastActivity = Date.now();
+    
+    function updateSpinner() {
+      if (activeJobs > 0) {
+        spinner.classList.add('active');
+        lastActivity = Date.now();
+      } else {
+        // Keep spinner visible for a short time after last activity
+        setTimeout(() => {
+          if (Date.now() - lastActivity > 3000) { // 3 seconds delay
+            spinner.classList.remove('active');
+          }
+        }, 3000);
+      }
+    }
     
     eventSource.onmessage = function(event) {
       if (event.data === 'refresh') {
@@ -976,13 +1659,125 @@ input:checked + .toggle-slider:before {
         setTimeout(() => {
           window.location.reload();
         }, 1000);
+      } else if (event.data === 'connected') {
+        // Initial connection - show spinner for initial activity
+        activeJobs = 10; // Assume initial scraping activity
+        updateSpinner();
+        // Gradually reduce over time if no updates come
+        setTimeout(() => {
+          if (activeJobs >= 10) {
+            activeJobs = Math.max(0, activeJobs - 5);
+            updateSpinner();
+          }
+        }, 10000); // 10 seconds
+      } else {
+        // Try to parse scraper update JSON
+        try {
+          const update = JSON.parse(event.data);
+          if (update.Status === 'running') {
+            activeJobs = Math.max(activeJobs, 1);
+            updateSpinner();
+          } else if (update.Status === 'completed' || update.Status === 'failed') {
+            activeJobs = Math.max(0, activeJobs - 1);
+            updateSpinner();
+          }
+          // Any scraper update indicates activity
+          lastActivity = Date.now();
+        } catch (e) {
+          // Not JSON, ignore
+        }
       }
     };
     
     eventSource.onerror = function() {
       console.log('SSE connection lost, will retry automatically');
+      activeJobs = 0;
+      updateSpinner();
     };
+    
+    // Show spinner initially for a few seconds to indicate loading
+    activeJobs = 1;
+    updateSpinner();
+    setTimeout(() => {
+      if (activeJobs <= 1) {
+        activeJobs = 0;
+        updateSpinner();
+      }
+    }, 5000);
   })();
+
+  // Refresh data function
+  async function refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    const status = document.getElementById('refreshStatus');
+    
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Refreshing...';
+    status.textContent = 'Triggering data refresh...';
+    status.style.color = '#3b82f6';
+    
+    try {
+      const response = await fetch('/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        status.textContent = 'Refresh started for ' + data.seriesCount + ' series. The page will update automatically.';
+        status.style.color = '#059669';
+        
+        // Listen for real-time updates
+        if (typeof eventSource !== 'undefined') {
+          let completedJobs = 0;
+          const totalJobs = data.jobsQueued || 0;
+          
+          const originalHandler = eventSource.onmessage;
+          eventSource.onmessage = function(event) {
+            if (event.data === 'refresh') {
+              // Page will reload automatically
+              location.reload();
+            } else if (event.data.startsWith('{')) {
+              try {
+                const update = JSON.parse(event.data);
+                if (update.status === 'completed' || update.status === 'failed') {
+                  completedJobs++;
+                  status.textContent = 'Progress: ' + completedJobs + '/' + totalJobs + ' series updated';
+                  
+                  if (completedJobs >= totalJobs) {
+                    setTimeout(() => {
+                      status.textContent = 'Refresh complete! Page reloading...';
+                      location.reload();
+                    }, 1000);
+                  }
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+            
+            // Call original handler
+            if (originalHandler) originalHandler(event);
+          };
+        }
+      } else {
+        throw new Error('HTTP ' + response.status);
+      }
+    } catch (error) {
+      console.error('Refresh error:', error);
+      status.textContent = 'Error triggering refresh. Please try again.';
+      status.style.color = '#dc2626';
+    } finally {
+      // Re-enable button after a delay
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Refresh All Data';
+      }, 2000);
+    }
+  }
   </script>
 </body>
 </html>
