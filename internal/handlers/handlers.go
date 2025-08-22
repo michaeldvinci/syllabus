@@ -11,17 +11,27 @@ import (
 
 	"github.com/michaeldvinci/syllabus/internal/auth"
 	"github.com/michaeldvinci/syllabus/internal/cache"
+	"github.com/michaeldvinci/syllabus/internal/database"
 	"github.com/michaeldvinci/syllabus/internal/models"
+	"github.com/michaeldvinci/syllabus/internal/scraper"
 	"github.com/michaeldvinci/syllabus/internal/utils"
 )
 
 // App holds the application state
 type App struct {
-	Provider    models.Provider
-	Cache       *cache.Cache
-	Data        []models.SeriesIDs
-	RefreshChan chan bool
-	mu          sync.RWMutex // Protect Data updates
+	Provider          models.Provider
+	DB                *database.Service
+	Cache             *cache.Cache
+	Data              []models.SeriesIDs
+	RefreshChan       chan bool
+	ScraperUpdateCh   <-chan scraper.SeriesUpdate // Channel for scraper updates
+	BackgroundScraper *scraper.BackgroundScraper   // Reference to background scraper
+	mu                sync.RWMutex                 // Protect Data updates
+	
+	// Auto-refresh functionality
+	autoRefreshInterval int           // Hours between auto-refreshes
+	autoRefreshTicker   *time.Ticker  // Ticker for auto-refresh
+	autoRefreshMu       sync.RWMutex  // Protect auto-refresh settings
 }
 
 // Row represents a table row in the HTML template
@@ -50,33 +60,11 @@ type Page struct {
 func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 	var rows []Row
 
-	audibleLatest := ""
-	audibleNext := ""
-	loc, _ := time.LoadLocation("America/Chicago")
-	now := time.Now().In(loc)
-	y, m, d := now.Date()
-	today := time.Date(y, m, d, 0, 0, 0, 0, loc)
 	infos := a.collectAll()
 	for _, info := range infos {
-		if info.AudibleLatestDate != nil {
-			audibleLatestS := info.AudibleLatestDate.Format("2006-01-02")
-
-			other, err := time.ParseInLocation("2006-01-02", audibleLatestS, loc)
-			if err != nil {
-				panic(err)
-			}
-
-			switch {
-			case other.Before(today):
-				audibleLatest = audibleLatestS
-				audibleNext = ""
-			case other.After(today):
-				audibleLatest = ""
-				audibleNext = audibleLatestS
-			default:
-				fmt.Println(audibleLatestS, "is TODAY")
-			}
-		}
+		// Reset variables for each series to prevent bleeding across rows
+		audibleLatest := formatDateOnly(info.AudibleLatestDate)
+		audibleNext := formatDateOnly(info.AudibleNextDate)
 		audURL := ""
 		if info.AudibleID != "" {
 			audURL = fmt.Sprintf("https://www.audible.com/series/%s", info.AudibleID)
@@ -91,8 +79,8 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 			AudibleLatest: audibleLatest,
 			AudibleNext:   audibleNext,
 			AmazonCount:   info.AmazonCount,
-			AmazonLatest:  joinTitleDate(info.AmazonLatestTitle, info.AmazonLatestDate),
-			AmazonNext:    joinTitleDate(info.AmazonNextTitle, info.AmazonNextDate),
+			AmazonLatest:  formatDateOnly(info.AmazonLatestDate),
+			AmazonNext:    formatDateOnly(info.AmazonNextDate),
 			AudibleURL:    audURL,
 			AmazonURL:     amzURL,
 		})
@@ -139,38 +127,89 @@ func (a *App) HandleICal(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(icalContent))
 }
 
-func (a *App) collectAll() []models.SeriesInfo {
-	a.mu.RLock()
-	data := make([]models.SeriesIDs, len(a.Data))
-	copy(data, a.Data)
-	a.mu.RUnlock()
-	
-	var wg sync.WaitGroup
-	infos := make([]models.SeriesInfo, len(data))
-	for i, e := range data {
-		wg.Add(1)
-		go func(i int, e models.SeriesIDs) {
-			defer wg.Done()
-			key := e.Title + "|" + e.AudibleID + "|" + e.AmazonASIN
-			if v, ok := a.Cache.Get(key); ok {
-				infos[i] = v
-				return
-			}
-			info, err := a.Provider.Fetch(e)
-			if err != nil {
-				info.Err = err
-			}
-			a.Cache.Set(key, info)
-			infos[i] = info
-		}(i, e)
+// HandleRefresh triggers a re-scrape of all series data
+func (a *App) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
 	}
-	wg.Wait()
+
+	// Get all series for re-scraping
+	stats, err := a.DB.GetAllSeriesStats()
+	if err != nil {
+		log.Printf("error fetching series for refresh: %v", err)
+		http.Error(w, "Failed to fetch series data", http.StatusInternalServerError)
+		return
+	}
+
+	jobsQueued := 0
+	
+	// Queue scraping jobs for all series (both providers)
+	for _, stat := range stats {
+		if stat.AudibleID != nil {
+			jobsQueued++
+		}
+		if stat.AmazonASIN != nil {
+			jobsQueued++
+		}
+	}
+
+	// Clear all existing book data before refresh to prevent stale data corruption
+	// This is a temporary fix for the cascading date issue
+	log.Printf("clearing all book data before refresh to prevent corruption")
+	if err := a.DB.ClearAllBookData(); err != nil {
+		log.Printf("warning: failed to clear book data: %v", err)
+	}
+	
+	// Use the background scraper to queue all series for refresh
+	if a.BackgroundScraper != nil {
+		err := a.BackgroundScraper.QueueAllSeriesUpdate()
+		if err != nil {
+			log.Printf("error queuing refresh jobs: %v", err)
+			http.Error(w, "Failed to queue refresh jobs", http.StatusInternalServerError)
+			return
+		}
+		log.Printf("queued refresh jobs for all series")
+		
+		// Also send refresh signal for UI updates
+		select {
+		case a.RefreshChan <- true:
+			log.Printf("refresh signal sent")
+		default:
+			log.Printf("refresh channel full, signal dropped")
+		}
+	} else {
+		log.Printf("background scraper not available")
+		http.Error(w, "Background scraper not available", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"success":     true,
+		"seriesCount": len(stats),
+		"jobsQueued":  jobsQueued,
+		"message":     "Refresh triggered successfully",
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
+func (a *App) collectAll() []models.SeriesInfo {
+	// Get data from database instead of scraping
+	stats, err := a.DB.GetAllSeriesStats()
+	if err != nil {
+		log.Printf("error fetching series stats from database: %v", err)
+		return []models.SeriesInfo{}
+	}
+	
+	infos := database.ToSeriesInfoSlice(stats)
+	
 	return infos
 }
 
-// WarmupCache fetches all series data at startup to populate the cache
+// WarmupCache is now a no-op since data comes from database
 func (a *App) WarmupCache() {
-	_ = a.collectAll()
+	log.Printf("using database - no warmup needed")
 }
 
 // HandleEvents serves Server-Sent Events for live refresh
@@ -184,13 +223,18 @@ func (a *App) HandleEvents(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "data: connected\n\n")
 	w.(http.Flusher).Flush()
 	
-	// Listen for refresh signals
+	// Listen for refresh signals and scraper updates
 	for {
 		select {
 		case <-r.Context().Done():
 			return
 		case <-a.RefreshChan:
 			fmt.Fprintf(w, "data: refresh\n\n")
+			w.(http.Flusher).Flush()
+		case update := <-a.ScraperUpdateCh:
+			// Send scraper update as JSON
+			updateJSON, _ := json.Marshal(update)
+			fmt.Fprintf(w, "data: %s\n\n", updateJSON)
 			w.(http.Flusher).Flush()
 		}
 	}
@@ -285,4 +329,109 @@ func joinTitleDate(title string, d *time.Time) string {
 		return title
 	}
 	return d.Format("2006-01-02")
+}
+
+func formatDateOnly(d *time.Time) string {
+	if d == nil {
+		return ""
+	}
+	return d.Format("2006-01-02")
+}
+
+// HandleAutoRefresh handles auto-refresh interval updates
+func (a *App) HandleAutoRefresh(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Interval int `json:"interval"`
+	}
+	
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+	
+	// Validate interval (2, 4, 6, 8, 10 hours)
+	if req.Interval < 2 || req.Interval > 10 || req.Interval%2 != 0 {
+		http.Error(w, "Invalid interval", http.StatusBadRequest)
+		return
+	}
+	
+	// Update the auto-refresh interval
+	a.SetAutoRefreshInterval(req.Interval)
+	
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"interval": req.Interval,
+	})
+}
+
+// SetAutoRefreshInterval updates the auto-refresh interval and restarts the ticker
+func (a *App) SetAutoRefreshInterval(hours int) {
+	a.autoRefreshMu.Lock()
+	defer a.autoRefreshMu.Unlock()
+	
+	a.autoRefreshInterval = hours
+	
+	// Stop existing ticker if it exists
+	if a.autoRefreshTicker != nil {
+		a.autoRefreshTicker.Stop()
+	}
+	
+	// Start new ticker with updated interval
+	a.autoRefreshTicker = time.NewTicker(time.Duration(hours) * time.Hour)
+	log.Printf("auto-refresh interval updated to %d hours", hours)
+}
+
+// StartAutoRefresh starts the automatic refresh loop
+func (a *App) StartAutoRefresh() {
+	// Default to 6 hours if not set
+	a.autoRefreshMu.Lock()
+	if a.autoRefreshInterval == 0 {
+		a.autoRefreshInterval = 6
+	}
+	interval := a.autoRefreshInterval
+	a.autoRefreshMu.Unlock()
+	
+	// Set initial ticker
+	a.SetAutoRefreshInterval(interval)
+	
+	// Start the auto-refresh goroutine
+	go func() {
+		log.Printf("starting auto-refresh loop with %d hour interval", interval)
+		
+		for range a.autoRefreshTicker.C {
+			log.Printf("triggering scheduled data refresh...")
+			
+			// Clear all existing book data before refresh
+			if err := a.DB.ClearAllBookData(); err != nil {
+				log.Printf("warning: failed to clear book data during auto-refresh: %v", err)
+			}
+			
+			// Queue refresh jobs for all series
+			if a.BackgroundScraper != nil {
+				if err := a.BackgroundScraper.QueueAllSeriesUpdate(); err != nil {
+					log.Printf("error queuing auto-refresh jobs: %v", err)
+				} else {
+					log.Printf("auto-refresh jobs queued successfully")
+				}
+			}
+		}
+	}()
+}
+
+// StopAutoRefresh stops the automatic refresh loop
+func (a *App) StopAutoRefresh() {
+	a.autoRefreshMu.Lock()
+	defer a.autoRefreshMu.Unlock()
+	
+	if a.autoRefreshTicker != nil {
+		a.autoRefreshTicker.Stop()
+		a.autoRefreshTicker = nil
+		log.Printf("auto-refresh stopped")
+	}
 }

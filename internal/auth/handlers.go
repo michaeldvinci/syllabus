@@ -48,7 +48,7 @@ func (h *AuthHandlers) serveLoginPage(w http.ResponseWriter, r *http.Request) {
 // handleLoginPost processes login form submissions
 func (h *AuthHandlers) handleLoginPost(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
-	
+
 	// Handle both JSON and form data
 	contentType := r.Header.Get("Content-Type")
 	if contentType == "application/json" {
@@ -72,14 +72,14 @@ func (h *AuthHandlers) handleLoginPost(w http.ResponseWriter, r *http.Request) {
 			Success: false,
 			Message: "Invalid username or password",
 		}
-		
+
 		if contentType == "application/json" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(response)
 			return
 		}
-		
+
 		// Redirect back to login with error
 		http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
 		return
@@ -212,7 +212,7 @@ func (h *AuthHandlers) HandleCreateUser(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		var statusCode int
 		var message string
-		
+
 		switch err {
 		case ErrUserExists:
 			statusCode = http.StatusConflict
@@ -247,7 +247,7 @@ func (h *AuthHandlers) HandleListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	users := h.store.ListUsers()
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(ListUsersResponse{
 		Users: users,
@@ -288,7 +288,7 @@ func (h *AuthHandlers) HandleResetPassword(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		var statusCode int
 		var message string
-		
+
 		switch err {
 		case ErrUserNotFound:
 			statusCode = http.StatusNotFound
@@ -442,7 +442,8 @@ input[type="password"]:focus {
 <body>
   <div class="login-container">
     <div class="logo">
-      <h1>📚 Syllabus</h1>
+      <img src="/static/syllabus_logo.png" alt="Syllabus Logo" style="height: 3rem; width: auto; margin-bottom: 0.5rem;">
+      <h1>Syllabus</h1>
     </div>
     
     <form method="POST" action="/login">
@@ -471,7 +472,6 @@ input[type="password"]:focus {
     </form>
     
     <div class="footer">
-      Default login: admin / admin
     </div>
   </div>
 </body>

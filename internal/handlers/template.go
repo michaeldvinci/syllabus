@@ -135,6 +135,47 @@ th.sort-desc::after { content: '\25BE'; opacity: .8; }
 .settings-btn { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; border-radius: .5rem; border: 1px solid var(--line); background: #fff; box-shadow: var(--head-shadow); cursor: pointer; font-size: 1.05rem; }
 .settings-btn:hover { background: #f8fafc; }
 .settings-btn:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
+
+.loading-spinner { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 2.25rem; 
+  height: 2.25rem; 
+  margin-right: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  position: relative;
+}
+.loading-spinner.active { opacity: 1; }
+
+.loading-spinner .dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #6b7280;
+  position: absolute;
+  animation: spin-dots 1.2s linear infinite;
+}
+
+.loading-spinner .dot:nth-child(1) { transform: rotate(0deg) translate(8px) rotate(0deg); animation-delay: 0s; }
+.loading-spinner .dot:nth-child(2) { transform: rotate(45deg) translate(8px) rotate(-45deg); animation-delay: -0.15s; }
+.loading-spinner .dot:nth-child(3) { transform: rotate(90deg) translate(8px) rotate(-90deg); animation-delay: -0.3s; }
+.loading-spinner .dot:nth-child(4) { transform: rotate(135deg) translate(8px) rotate(-135deg); animation-delay: -0.45s; }
+.loading-spinner .dot:nth-child(5) { transform: rotate(180deg) translate(8px) rotate(-180deg); animation-delay: -0.6s; }
+.loading-spinner .dot:nth-child(6) { transform: rotate(225deg) translate(8px) rotate(-225deg); animation-delay: -0.75s; }
+.loading-spinner .dot:nth-child(7) { transform: rotate(270deg) translate(8px) rotate(-270deg); animation-delay: -0.9s; }
+.loading-spinner .dot:nth-child(8) { transform: rotate(315deg) translate(8px) rotate(-315deg); animation-delay: -1.05s; }
+
+@keyframes spin-dots {
+  0%, 20% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1); }
+  80%, 100% { opacity: 0.2; transform: scale(0.8); }
+}
+
+[data-theme="dark"] .loading-spinner .dot {
+  background: #9ca3af;
+}
 .settings-wrap { position: relative; }
 .settings-panel { position: absolute; right: 0; top: 2.8rem; width: 320px; max-width: calc(100vw - 2rem); background: #fff; border: 1px solid var(--line); border-radius: .5rem; box-shadow: 0 10px 20px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.06); padding: .75rem; z-index: 10; }
 .settings-panel .panel-section { padding: .5rem .25rem; }
@@ -283,6 +324,71 @@ input:checked + .toggle-slider:before {
 
 [data-theme="dark"] .toggle-slider:before {
   background: #f3f4f6;
+}
+
+/* Auto refresh slider styling */
+.auto-refresh-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.auto-refresh-label {
+  font-size: 0.9rem;
+  color: var(--text);
+  text-align: center;
+  font-weight: 500;
+}
+
+.auto-refresh-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.auto-refresh-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.auto-refresh-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.auto-refresh-markers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: -0.25rem;
+}
+
+[data-theme="dark"] .auto-refresh-slider {
+  background: #4b5563;
+}
+
+[data-theme="dark"] .auto-refresh-slider::-webkit-slider-thumb {
+  background: #60a5fa;
+}
+
+[data-theme="dark"] .auto-refresh-slider::-moz-range-thumb {
+  background: #60a5fa;
 }
 
 /* Dark mode count badge styling for better visibility */
@@ -777,6 +883,16 @@ input:checked + .toggle-slider:before {
       Syllabus
     </h1>
     <div class="settings-wrap">
+      <div class="loading-spinner" id="loadingSpinner" title="Processing data...">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
       <button class="settings-btn" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel" title="Settings" aria-label="Settings">⚙️</button>
       <div class="settings-panel" id="settingsPanel" hidden>
         <div class="panel-section">
@@ -812,6 +928,29 @@ input:checked + .toggle-slider:before {
                 🔐 Sign In
               </a>
             {{ end }}
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Data Refresh</div>
+          <div class="panel-content">
+            <button onclick="refreshData()" class="export-btn" id="refreshBtn">🔄 Refresh All Data</button>
+            <div id="refreshStatus" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted);"></div>
+          </div>
+        </div>
+        <div class="panel-section">
+          <div class="panel-heading">Auto Refresh</div>
+          <div class="panel-content">
+            <div class="auto-refresh-setting">
+              <label for="autoRefreshSlider" class="auto-refresh-label">Every <span id="autoRefreshValue">6</span> hours</label>
+              <input type="range" id="autoRefreshSlider" min="2" max="10" step="2" value="6" class="auto-refresh-slider">
+              <div class="auto-refresh-markers">
+                <span>2h</span>
+                <span>4h</span>
+                <span>6h</span>
+                <span>8h</span>
+                <span>10h</span>
+              </div>
+            </div>
           </div>
         </div>
         <div class="panel-section">
@@ -1065,6 +1204,49 @@ input:checked + .toggle-slider:before {
         const newTheme = themeToggle.checked ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('theme', newTheme);
+      });
+    }
+
+    // Auto refresh slider functionality
+    const autoRefreshSlider = document.getElementById('autoRefreshSlider');
+    const autoRefreshValue = document.getElementById('autoRefreshValue');
+    if (autoRefreshSlider && autoRefreshValue) {
+      // Load saved auto refresh interval or default to 6
+      const savedInterval = localStorage.getItem('autoRefreshInterval') || '6';
+      autoRefreshSlider.value = savedInterval;
+      autoRefreshValue.textContent = savedInterval;
+      
+      // Handle slider changes
+      autoRefreshSlider.addEventListener('input', () => {
+        const value = autoRefreshSlider.value;
+        autoRefreshValue.textContent = value;
+        localStorage.setItem('autoRefreshInterval', value);
+        
+        // Send update to server
+        fetch('/api/auto-refresh', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            interval: parseInt(value)
+          })
+        }).catch(error => {
+          console.error('Error updating auto refresh interval:', error);
+        });
+      });
+      
+      // Set initial interval on server
+      fetch('/api/auto-refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          interval: parseInt(savedInterval)
+        })
+      }).catch(error => {
+        console.error('Error setting initial auto refresh interval:', error);
       });
     }
 
@@ -1447,6 +1629,23 @@ input:checked + .toggle-slider:before {
   // Live refresh via Server-Sent Events
   (function() {
     const eventSource = new EventSource('/events');
+    const spinner = document.getElementById('loadingSpinner');
+    let activeJobs = 0;
+    let lastActivity = Date.now();
+    
+    function updateSpinner() {
+      if (activeJobs > 0) {
+        spinner.classList.add('active');
+        lastActivity = Date.now();
+      } else {
+        // Keep spinner visible for a short time after last activity
+        setTimeout(() => {
+          if (Date.now() - lastActivity > 3000) { // 3 seconds delay
+            spinner.classList.remove('active');
+          }
+        }, 3000);
+      }
+    }
     
     eventSource.onmessage = function(event) {
       if (event.data === 'refresh') {
@@ -1460,13 +1659,125 @@ input:checked + .toggle-slider:before {
         setTimeout(() => {
           window.location.reload();
         }, 1000);
+      } else if (event.data === 'connected') {
+        // Initial connection - show spinner for initial activity
+        activeJobs = 10; // Assume initial scraping activity
+        updateSpinner();
+        // Gradually reduce over time if no updates come
+        setTimeout(() => {
+          if (activeJobs >= 10) {
+            activeJobs = Math.max(0, activeJobs - 5);
+            updateSpinner();
+          }
+        }, 10000); // 10 seconds
+      } else {
+        // Try to parse scraper update JSON
+        try {
+          const update = JSON.parse(event.data);
+          if (update.Status === 'running') {
+            activeJobs = Math.max(activeJobs, 1);
+            updateSpinner();
+          } else if (update.Status === 'completed' || update.Status === 'failed') {
+            activeJobs = Math.max(0, activeJobs - 1);
+            updateSpinner();
+          }
+          // Any scraper update indicates activity
+          lastActivity = Date.now();
+        } catch (e) {
+          // Not JSON, ignore
+        }
       }
     };
     
     eventSource.onerror = function() {
       console.log('SSE connection lost, will retry automatically');
+      activeJobs = 0;
+      updateSpinner();
     };
+    
+    // Show spinner initially for a few seconds to indicate loading
+    activeJobs = 1;
+    updateSpinner();
+    setTimeout(() => {
+      if (activeJobs <= 1) {
+        activeJobs = 0;
+        updateSpinner();
+      }
+    }, 5000);
   })();
+
+  // Refresh data function
+  async function refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    const status = document.getElementById('refreshStatus');
+    
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Refreshing...';
+    status.textContent = 'Triggering data refresh...';
+    status.style.color = '#3b82f6';
+    
+    try {
+      const response = await fetch('/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        status.textContent = 'Refresh started for ' + data.seriesCount + ' series. The page will update automatically.';
+        status.style.color = '#059669';
+        
+        // Listen for real-time updates
+        if (typeof eventSource !== 'undefined') {
+          let completedJobs = 0;
+          const totalJobs = data.jobsQueued || 0;
+          
+          const originalHandler = eventSource.onmessage;
+          eventSource.onmessage = function(event) {
+            if (event.data === 'refresh') {
+              // Page will reload automatically
+              location.reload();
+            } else if (event.data.startsWith('{')) {
+              try {
+                const update = JSON.parse(event.data);
+                if (update.status === 'completed' || update.status === 'failed') {
+                  completedJobs++;
+                  status.textContent = 'Progress: ' + completedJobs + '/' + totalJobs + ' series updated';
+                  
+                  if (completedJobs >= totalJobs) {
+                    setTimeout(() => {
+                      status.textContent = 'Refresh complete! Page reloading...';
+                      location.reload();
+                    }, 1000);
+                  }
+                }
+              } catch (e) {
+                // Ignore parse errors
+              }
+            }
+            
+            // Call original handler
+            if (originalHandler) originalHandler(event);
+          };
+        }
+      } else {
+        throw new Error('HTTP ' + response.status);
+      }
+    } catch (error) {
+      console.error('Refresh error:', error);
+      status.textContent = 'Error triggering refresh. Please try again.';
+      status.style.color = '#dc2626';
+    } finally {
+      // Re-enable button after a delay
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Refresh All Data';
+      }, 2000);
+    }
+  }
   </script>
 </body>
 </html>

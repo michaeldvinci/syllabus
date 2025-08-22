@@ -1,40 +1,61 @@
 # syllabus
 
-A small Go web app that reads a YAML list of audiobook series and displays live series metadata by scraping Audible and Amazon. It exposes a simple web UI and a JSON API.
+A Go web application that tracks audiobook series release dates by scraping Audible and Amazon. Features user authentication, database persistence, background scraping, and automatic refresh capabilities with a clean web UI and JSON API.
 
-So I was maintaining this Obsidian "database" manually and got pretty tired of having to open up a ton of tabs and checking release dates periodically, resulting in Syllabus. Sample config is included to see how the screenshot below was created.
+Originally created to replace manual maintenance of an Obsidian "database" for tracking audiobook release dates. Sample config is included to see how the screenshots below were created.
 
 I call it `syllabus` because it's a list of things to read.
 
-It's barebones and does just what I need it to do. 
+Perfect for homelab deployment with Docker Compose for automated audiobook series tracking. 
 
 ### Desktop
 <img alt="syllabus-desktop" src="res/syllabus-desktop.png" height="600" width="900">
+
+### Settings
+<img alt="syllabus-desktop" src="res/syllabus-settings.png" height="600" width="900">
 
 ### Mobile
 <img alt="syllabus-mobile" src="res/syllabus-mobile.png" height="700" width="375">
 
 ## Features
 
-- Parse series from a YAML file
-- Fetch Audible series pages and count current audiobooks
-- Extract the latest release date from Audible series pages
-- Fetch Amazon pages to detect ebook series size and next release date
-- In-memory caching with TTL
-- Optional file watching to auto-reload YAML changes
-- Minimal HTML table view and JSON API
+### Core Functionality
+- **YAML Configuration**: Parse audiobook series from a simple YAML file
+- **Multi-Provider Scraping**: Fetch data from both Audible and Amazon
+- **Release Date Tracking**: Extract latest and next release dates automatically
+- **Database Persistence**: SQLite database for reliable data storage
+- **Background Processing**: Multi-threaded background scraper with job queue
+- **Real-time Updates**: Server-sent events for live UI updates
 
-## Functionality
- 
-- Sortable columns
-- Audible + Amazon links to series added to rows
-- Settings started to be implemented
+### User Experience
+- **Authentication System**: Secure login with role-based access (Admin/User)
+- **Responsive Web UI**: Clean, mobile-friendly interface
+- **Auto-refresh**: Configurable automatic data refresh (2-10 hours)
+- **Manual Refresh**: On-demand data refresh with progress tracking
+- **iCal Export**: Subscribe to release date calendar in your favorite app
+- **Settings Panel**: Manage refresh intervals and preferences
+
+### Technical Features
+- **File Watching**: Auto-reload when YAML configuration changes
+- **Graceful Shutdown**: Clean application termination handling
+- **Docker Support**: Full containerization with Docker Compose
+- **JSON API**: Programmatic access to series data
+- **Rate Limiting**: Intelligent scraping to avoid provider restrictions
+
+## Quick Start
+
+### Default Credentials
+- **Username**: `admin`  
+- **Password**: `admin`
+
+⚠️ **Change the default password immediately after first login**
 
 ## Requirements
 
-- Go 1.24+
-- Internet access
-- A YAML file of series
+- Go 1.21+ (for local development)
+- Docker & Docker Compose (recommended)
+- Internet access for scraping
+- YAML configuration file
 
 ## Configuration
 
@@ -52,62 +73,137 @@ audiobooks:
 
 Only title, audible, and amazon are required for scraping.
 
+## Installation & Deployment
 
-## Run Locally
+### Docker Compose (Recommended)
 
 ```bash
-❯ which dlf
-dlf () {
-  docker logs -f $1
-}
-
 git clone https://github.com/michaeldvinci/syllabus.git
-
 cd syllabus
 
-docker buildx build -t syllabus:latest . \
-  && docker compose up -\
-  && dlf syllabus-syllabus-1
+# Build and start
+docker compose up -d
+
+# View logs
+docker compose logs -f
 ```
 
-Open http://localhost:8081 for the UI. The API is available at /api/series.
+### Local Development
 
-## Data Sources
+```bash
+git clone https://github.com/michaeldvinci/syllabus.git
+cd syllabus
 
-Audible:
-- `AudibleCount` is the number of occurrences of the substring `productlistitem` in the series page HTML
-- `AudibleLatest` is the last occurrence of `Release date: MM-DD-YY `parsed from the series page
+# Run directly
+go run cmd/syllabus/main.go config/books.yaml
 
-Amazon:
-- `AmazonCount` is parsed from the element with id `collection-size` in the form `(N book series)`
-- `AmazonNext` is parsed from a span with class `a-color-success a-text-bold` containing a date like `Month D, YYYY`
+# Or build first
+go build -o syllabus cmd/syllabus/main.go
+./syllabus config/books.yaml
+```
 
-## JSON API
+### Access the Application
 
-GET /api/series
+- **Web UI**: http://localhost:8080
+- **Login**: Use `admin` / `admin` (change immediately!)
+- **JSON API**: http://localhost:8080/api/series
+- **Calendar**: http://localhost:8080/calendar.ics
 
-Returns an array of objects with fields:
-- Title
-- AudibleCount
-- AudibleLatestTitle
-- AudibleLatestDate
-- AudibleNextTitle
-- AudibleNextDate
-- AmazonCount
-- AmazonLatestTitle
-- AmazonLatestDate
-- AmazonNextTitle
-- AmazonNextDate
-- AudibleID
-- AmazonASIN
-- Err
+## Data Sources & Scraping
 
-Dates are ISO 8601 when returned from the API.
+### Audible Scraping
+- **Series Count**: Number of `productlistitem` occurrences in series page HTML
+- **Latest Release**: Most recent `Release date: MM-DD-YY` from series page
+- **Next Release**: Extracted from "Coming Soon" or pre-order sections
 
-## Caching
+### Amazon Scraping  
+- **Series Count**: Parsed from `collection-size` element as `(N book series)`
+- **Next Release**: Date from `a-color-success a-text-bold` span elements
+- **Series Detection**: Automatic ASIN extraction from Amazon URLs
 
-Responses from providers are cached in memory for 6 hours.
+### Background Processing
+- **Multi-threaded**: 4 concurrent workers for faster scraping
+- **Job Queue**: Persistent SQLite-based job management  
+- **Rate Limiting**: Intelligent delays to respect provider limits
+- **Error Handling**: Automatic retry logic with exponential backoff
 
-## File Watching
+## API Reference
 
-If enabled in the code, the application watches the directory of the YAML file and reloads data when the file changes. The cache is cleared on reload.
+### Authentication Required
+All API endpoints require authentication via session cookie (login at `/login`).
+
+### GET /api/series
+Returns an array of series objects with the following fields:
+
+```json
+{
+  "Title": "Series Name",
+  "AudibleCount": 5,
+  "AudibleLatestTitle": "Book Title",
+  "AudibleLatestDate": "2024-01-15T00:00:00Z",
+  "AudibleNextTitle": "Next Book Title", 
+  "AudibleNextDate": "2024-03-20T00:00:00Z",
+  "AmazonCount": 5,
+  "AmazonLatestTitle": "Book Title",
+  "AmazonLatestDate": "2024-01-15T00:00:00Z",
+  "AmazonNextTitle": "Next Book Title",
+  "AmazonNextDate": "2024-03-20T00:00:00Z",
+  "AudibleID": "B0EXAMPLE",
+  "AmazonASIN": "B08EXAMPLE",
+  "Err": null
+}
+```
+
+### POST /refresh
+Triggers a manual refresh of all series data.
+
+### GET /calendar.ics
+Returns iCal calendar file with all upcoming release dates.
+
+### POST /api/auto-refresh
+Updates automatic refresh interval (Admin only).
+```json
+{"interval": 6}
+```
+
+All dates are returned in ISO 8601 format.
+
+## Data Storage & Persistence
+
+### SQLite Database
+- **Location**: `./data/syllabus.db` 
+- **Schema**: Series, books, and job queue tables
+- **Persistence**: Survives application restarts
+- **Migration**: Automatic schema updates on startup
+
+### User Management
+- **Storage**: `./data/users.json`
+- **Encryption**: bcrypt password hashing
+- **Roles**: Admin and User access levels
+- **Default**: Admin user created on first run
+
+### Configuration Watching
+- **Auto-reload**: YAML file changes trigger incremental updates
+- **Smart Updates**: Only new series are scraped, existing data preserved
+- **Hot Refresh**: No application restart required
+
+## Auto-Refresh System
+
+### Configurable Intervals
+- **Options**: 2, 4, 6, 8, 10 hours
+- **Default**: 6 hours
+- **UI Control**: Settings panel slider
+- **Persistence**: Interval survives restarts
+
+### Refresh Behavior
+- **Incremental**: Only updates stale data
+- **Background**: Non-blocking operation
+- **Progress**: Real-time updates via Server-Sent Events
+- **Manual Override**: Refresh button forces immediate update
+
+## Troubleshooting
+
+### Log Locations
+- **Docker**: `docker compose logs syllabus`
+- **Local**: Console output
+- **Scraper**: Detailed job progress in logs

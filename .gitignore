@@ -9,7 +9,56 @@ Syllabus
 # Build artifacts
 syllabus
 *.exe
+*.so
+*.dylib
+*.dll
+
+# Test files and coverage
+*_test.go
+*.test
+*.out
+coverage.out
+coverage.html
+.coverage/
+test_results/
+*.coverprofile
 
 # Temporary files
 *.tmp
 *.log
+*.pid
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+.vim/
+.netrwhist
+
+# Environment and config
+.env
+.env.local
+.env.*.local
+config.local.yaml
+*.local.yaml
+
+# Docker and container files
+.docker/
+docker-compose.override.yml
+
+# Development utilities
+cookies.txt
+debug.log
+pprof/
+*.pprof
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Go module cache (if local)
+go.sum.backup
