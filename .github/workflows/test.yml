@@ -1,6 +1,7 @@
 name: test
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - '**'
@@ -15,8 +16,53 @@ on:
       - '.github/workflows/**'
 
 jobs:
+  go:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Run tests and generate coverage
+        run: |
+          set -euo pipefail
+          # run tests and produce coverage files
+          go test ./... -coverprofile=coverage.out
+          # human-readable function coverage
+          go tool cover -func=coverage.out > coverage.txt
+          # HTML coverage for download / local review (optional)
+          go tool cover -html=coverage.out -o coverage.html || true
+
+      - name: Publish coverage to job summary
+        # Append a markdown summary to the workflow run's Summary tab
+        run: |
+          echo "### Test Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Coverage output (first 200 lines):" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          sed -n '1,200p' coverage.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          # parse overall coverage percent from go tool cover output and add a badge-like line
+          total=$(awk '/^total:/ {print $3}' coverage.txt | tr -d '%')
+          if [ -n "$total" ]; then
+            # you can change threshold
+            threshold=80
+            printf "\n" >> $GITHUB_STEP_SUMMARY
+            if awk "BEGIN {exit !($total < $threshold)}"; then
+              echo "**Overall coverage: ${total}% :warning: (below ${threshold}% threshold)**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "**Overall coverage: ${total}% :white_check_mark:**" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "_Could not parse overall coverage percentage_" >> $GITHUB_STEP_SUMMARY
+          fi
   docker:
     runs-on: ubuntu-latest
+    needs: ["go"]
     steps:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
