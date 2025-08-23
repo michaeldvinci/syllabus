@@ -1,10 +1,10 @@
 package utils
 
 import (
+	"crypto/md5"
 	"fmt"
 	"strings"
 	"time"
-	"crypto/md5"
 
 	"github.com/michaeldvinci/syllabus/internal/models"
 )
@@ -18,7 +18,7 @@ func GenerateICal(infos []models.SeriesInfo) string {
 	cal := []string{
 		"BEGIN:VCALENDAR",
 		"VERSION:2.0",
-		"PRODID:-//Syllabus//Book Release Calendar//EN",
+		"PRODID:-//syllabus//Book Release Calendar//EN",
 		"CALSCALE:GREGORIAN",
 		"METHOD:PUBLISH",
 		"X-WR-CALNAME:Book Releases",
@@ -76,7 +76,7 @@ func createEvent(title, description string, eventDate, createdDate time.Time, ui
 	endDateStr := endDate.Format("20060102")
 	// Created/modified timestamps still use full datetime format
 	createdStr := createdDate.UTC().Format("20060102T150405Z")
-	
+
 	// Generate a unique UID using MD5 hash
 	uidHash := fmt.Sprintf("%x", md5.Sum([]byte(uid)))
 

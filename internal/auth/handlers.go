@@ -391,7 +391,7 @@ const LoginHTML = `
 <html>
 <head>
 <meta charset="utf-8">
-<title>Syllabus - Login</title>
+<title>syllabus - Login</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 :root {
@@ -514,8 +514,8 @@ input[type="password"]:focus {
 <body>
   <div class="login-container">
     <div class="logo">
-      <img src="/static/syllabus_logo.png" alt="Syllabus Logo" style="height: 3rem; width: auto; margin-bottom: 0.5rem;">
-      <h1>Syllabus</h1>
+      <img src="/static/syllabus_logo.png" alt="syllabus Logo" style="height: 3rem; width: auto; margin-bottom: 0.5rem;">
+      <h1>syllabus</h1>
     </div>
     
     <form method="POST" action="/login">

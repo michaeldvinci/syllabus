@@ -1,4 +1,4 @@
--- SQLite schema for Syllabus application
+-- SQLite schema for syllabus application
 
 -- Series table - stores basic series information
 CREATE TABLE IF NOT EXISTS series (

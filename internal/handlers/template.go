@@ -5,7 +5,7 @@ const IndexHTML = `
 <html>
 <head>
 <meta charset="utf-8">
-<title>Syllabus</title>
+<title>syllabus</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
 <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
@@ -171,8 +171,8 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
   <div class="top-bar">
     <div class="top-bar-left">
       <div class="top-bar-logo">
-        <img src="/static/syllabus_logo.png" alt="Syllabus Logo" class="logo">
-        <span class="top-bar-title">Syllabus</span>
+        <img src="/static/syllabus_logo.png" alt="syllabus Logo" class="logo">
+        <span class="top-bar-title">syllabus</span>
       </div>
       <div class="top-bar-search">
         <input type="text" class="search-input" placeholder="Search series..." id="searchInput">
@@ -383,7 +383,13 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
             <button id="icalSubscribeBtn" style="padding:6px 12px;background:var(--amz);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500">Subscribe</button>
           </div>
         </div>
-        <div style="padding-top:16px;border-top:1px solid var(--line);text-align:center">
+        <div style="padding-top:16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
+          <a href="https://github.com/michaeldvinci/syllabus" target="_blank" rel="noopener" style="color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:4px;font-size:12px" title="View source code on GitHub">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            GitHub
+          </a>
           <div style="font-style:italic;color:var(--muted);font-size:12px">Last scrape started: {{ .LastScrape }}</div>
         </div>
       </div>

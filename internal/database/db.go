@@ -23,15 +23,17 @@ func New(dataDir string) (*DB, error) {
 	// Ensure data directory exists
 	dbPath := filepath.Join(dataDir, "syllabus.db")
 	
-	// Open SQLite database
-	sqlDB, err := sql.Open("sqlite3", dbPath+"?_foreign_keys=on&_journal_mode=WAL")
+	// Open SQLite database with optimized settings for concurrent access
+	connectionString := dbPath + "?_foreign_keys=on&_journal_mode=WAL&_synchronous=NORMAL&_cache_size=1000&_temp_store=memory&_busy_timeout=5000"
+	sqlDB, err := sql.Open("sqlite3", connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Configure connection pool
-	sqlDB.SetMaxOpenConns(1) // SQLite works best with single writer
-	sqlDB.SetMaxIdleConns(1)
+	// Configure connection pool for concurrent access
+	// WAL mode supports multiple concurrent readers + single writer
+	sqlDB.SetMaxOpenConns(10)  // Allow multiple concurrent connections
+	sqlDB.SetMaxIdleConns(5)   // Keep some connections idle for reuse
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	db := &DB{sqlDB}
