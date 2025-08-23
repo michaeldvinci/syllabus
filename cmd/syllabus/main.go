@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -33,19 +34,44 @@ func main() {
 	}
 	
 	series := utils.ToSeriesIDs(cfg.Audiobooks)
+	settings := cfg.GetSettings()
+	
+	// Apply environment variable overrides (takes precedence over YAML config)
+	utils.ApplyEnvOverrides(&settings)
+	
+	log.Printf("configuration loaded - auto_refresh: %dh, workers: %d, port: %d, cache: %dh, log: %s", 
+		settings.AutoRefreshInterval, settings.DefaultWorkers, settings.ServerPort, 
+		settings.CacheTimeout, settings.LogLevel)
 
-	// Initialize providers with fresh HTTP clients to prevent shared state
+	// Initialize individual providers with fresh HTTP clients to prevent shared state
+	audibleProvider := &scrapers.AudibleScraperProvider{
+		Enabled: true, 
+		Client: &http.Client{
+			Timeout: 12 * time.Second,
+			Jar:     nil, // Disable cookies to prevent session state bleeding
+		},
+	}
+	
+	amazonProvider := &scrapers.AmazonScraperProvider{
+		Enabled: true, 
+		Client: &http.Client{
+			Timeout: 12 * time.Second,
+			Jar:     nil, // Disable cookies to prevent session state bleeding
+		},
+	}
+	
+	// Create provider map for background scraper
+	providers := map[string]models.Provider{
+		"audible": audibleProvider,
+		"amazon":  amazonProvider,
+	}
+	
+	// Create composite provider for backward compatibility (if needed)
 	provider := &scrapers.CompositeProvider{
 		Providers: []models.Provider{
 			&scrapers.AmazonPAAPIProvider{Enabled: false},
-			&scrapers.AmazonScraperProvider{Enabled: true, Client: &http.Client{
-				Timeout: 12 * time.Second,
-				Jar:     nil, // Disable cookies to prevent session state bleeding
-			}},
-			&scrapers.AudibleScraperProvider{Enabled: true, Client: &http.Client{
-				Timeout: 12 * time.Second,
-				Jar:     nil, // Disable cookies to prevent session state bleeding
-			}},
+			amazonProvider,
+			audibleProvider,
 		},
 	}
 
@@ -82,18 +108,19 @@ func main() {
 	authMiddleware := auth.NewMiddleware(authStore)
 	authHandlers := auth.NewAuthHandlers(authStore)
 
-	// Initialize background scraper
-	backgroundScraper := scraper.NewBackgroundScraper(provider, dbService)
+	// Initialize background scraper with provider map
+	backgroundScraper := scraper.NewBackgroundScraper(providers, dbService)
 	
 	// Initialize application
 	app := &handlers.App{
 		Provider:          provider,
 		DB:                dbService,
-		Cache:             cache.NewCache(6 * time.Hour),
+		Cache:             cache.NewCache(time.Duration(settings.CacheTimeout) * time.Hour),
 		Data:              series,
 		RefreshChan:       make(chan bool, 1),
 		ScraperUpdateCh:   backgroundScraper.GetUpdateChannel(),
 		BackgroundScraper: backgroundScraper,
+		Settings:          settings,
 	}
 
 	// Setup authentication routes (no middleware needed)
@@ -104,11 +131,13 @@ func main() {
 	// Setup admin-only routes
 	http.HandleFunc("/api/users", authMiddleware.RequireAdmin(authHandlers.HandleListUsers))
 	http.HandleFunc("/api/users/create", authMiddleware.RequireAdmin(authHandlers.HandleCreateUser))
+	http.HandleFunc("/api/users/delete", authMiddleware.RequireAdmin(authHandlers.HandleDeleteUser))
 	http.HandleFunc("/api/users/reset-password", authMiddleware.RequireAdmin(authHandlers.HandleResetPassword))
 
 	// Setup protected HTTP routes with authentication middleware
 	http.HandleFunc("/", authMiddleware.RequireAuth(app.HandleIndex))
 	http.HandleFunc("/api/series", authMiddleware.RequireAuth(app.HandleAPI))
+	http.HandleFunc("/api/scrape-status", authMiddleware.RequireAuth(app.HandleScrapeStatus))
 	http.HandleFunc("/events", authMiddleware.RequireAuth(app.HandleEvents))
 	http.HandleFunc("/calendar.ics", authMiddleware.RequireAuth(app.HandleICal))
 	http.HandleFunc("/refresh", authMiddleware.RequireAuth(app.HandleRefresh))
@@ -210,7 +239,7 @@ func main() {
 	
 	// Start background scraper
 	log.Printf("starting background scraper...")
-	backgroundScraper.Start(ctx, 4) // 4 worker threads for faster scraping
+	backgroundScraper.Start(ctx, settings.DefaultWorkers) // Use config setting for worker threads
 	defer backgroundScraper.Stop()
 	
 	// Queue initial scraping jobs for all series
@@ -222,7 +251,7 @@ func main() {
 	app.StartAutoRefresh()
 	
 	// Start server in background
-	addr := ":8080"
+	addr := fmt.Sprintf(":%d", settings.ServerPort)
 	log.Printf("starting server on %s ...", addr)
 	go func() {
 		log.Fatal(http.ListenAndServe(addr, nil))

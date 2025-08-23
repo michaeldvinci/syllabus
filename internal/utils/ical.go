@@ -33,7 +33,7 @@ func GenerateICal(infos []models.SeriesInfo) string {
 				title = "Next audiobook release"
 			}
 			event := createEvent(
-				fmt.Sprintf("%s Releases", info.Title),
+				fmt.Sprintf("[AU] %s Releases", info.Title),
 				title,
 				*info.AudibleNextDate,
 				now,
@@ -49,7 +49,7 @@ func GenerateICal(infos []models.SeriesInfo) string {
 				title = "Next ebook release"
 			}
 			event := createEvent(
-				fmt.Sprintf("%s Releases", info.Title),
+				fmt.Sprintf("[AM] %s Releases", info.Title),
 				title,
 				*info.AmazonNextDate,
 				now,
@@ -68,8 +68,13 @@ func GenerateICal(infos []models.SeriesInfo) string {
 
 // createEvent creates a single VEVENT for iCal format
 func createEvent(title, description string, eventDate, createdDate time.Time, uid string) string {
-	// Format dates for iCal (YYYYMMDDTHHMMSSZ format in UTC)
-	dateStr := eventDate.UTC().Format("20060102T150405Z")
+	// Format dates for iCal
+	// For all-day events, use YYYYMMDD format without time
+	eventDateStr := eventDate.Format("20060102")
+	// Add one day for DTEND (all-day events need DTEND to be the day after)
+	endDate := eventDate.AddDate(0, 0, 1)
+	endDateStr := endDate.Format("20060102")
+	// Created/modified timestamps still use full datetime format
 	createdStr := createdDate.UTC().Format("20060102T150405Z")
 	
 	// Generate a unique UID using MD5 hash
@@ -78,8 +83,8 @@ func createEvent(title, description string, eventDate, createdDate time.Time, ui
 	return strings.Join([]string{
 		"BEGIN:VEVENT",
 		fmt.Sprintf("UID:%s@syllabus", uidHash),
-		fmt.Sprintf("DTSTART:%s", dateStr),
-		fmt.Sprintf("DTEND:%s", dateStr),
+		fmt.Sprintf("DTSTART;VALUE=DATE:%s", eventDateStr),
+		fmt.Sprintf("DTEND;VALUE=DATE:%s", endDateStr),
 		fmt.Sprintf("DTSTAMP:%s", createdStr),
 		fmt.Sprintf("CREATED:%s", createdStr),
 		fmt.Sprintf("LAST-MODIFIED:%s", createdStr),

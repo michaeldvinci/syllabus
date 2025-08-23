@@ -314,6 +314,78 @@ func (h *AuthHandlers) HandleResetPassword(w http.ResponseWriter, r *http.Reques
 	})
 }
 
+// HandleDeleteUser handles user deletion requests (admin only)
+func (h *AuthHandlers) HandleDeleteUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Username string `json:"username"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Invalid request format",
+		})
+		return
+	}
+
+	// Validate input
+	if req.Username == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Username is required",
+		})
+		return
+	}
+
+	// Prevent deletion of admin user
+	if req.Username == "admin" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Cannot delete admin user",
+		})
+		return
+	}
+
+	err := h.store.DeleteUser(req.Username)
+	if err != nil {
+		var statusCode int
+		var message string
+
+		switch err {
+		case ErrUserNotFound:
+			statusCode = http.StatusNotFound
+			message = "User not found"
+		default:
+			statusCode = http.StatusInternalServerError
+			message = "Failed to delete user"
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": message,
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": "User deleted successfully",
+	})
+}
+
 const LoginHTML = `
 <!doctype html>
 <html>

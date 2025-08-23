@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -11,11 +12,11 @@ import (
 
 // BackgroundScraper handles background scraping operations
 type BackgroundScraper struct {
-	provider models.Provider
-	db       *database.Service
-	jobChan  chan database.ScrapeJob
-	done     chan struct{}
-	wg       sync.WaitGroup
+	providers map[string]models.Provider  // Map of provider name to provider instance
+	db        *database.Service
+	jobChan   chan database.ScrapeJob
+	done      chan struct{}
+	wg        sync.WaitGroup
 	
 	// For notifying UI of updates
 	updateChan chan SeriesUpdate
@@ -30,10 +31,10 @@ type SeriesUpdate struct {
 	Error    string `json:"error,omitempty"`
 }
 
-// NewBackgroundScraper creates a new background scraper
-func NewBackgroundScraper(provider models.Provider, db *database.Service) *BackgroundScraper {
+// NewBackgroundScraper creates a new background scraper with provider map
+func NewBackgroundScraper(providers map[string]models.Provider, db *database.Service) *BackgroundScraper {
 	return &BackgroundScraper{
-		provider:   provider,
+		providers:  providers,
 		db:         db,
 		jobChan:    make(chan database.ScrapeJob, 100), // Buffer for jobs
 		done:       make(chan struct{}),
@@ -144,8 +145,17 @@ func (bs *BackgroundScraper) processJob(workerID int, job database.ScrapeJob) {
 		AmazonASIN: stringValue(series.AmazonASIN),
 	}
 	
-	// Perform the scraping
-	info, err := bs.provider.Fetch(seriesIDs)
+	// Get the specific provider for this job
+	provider, exists := bs.providers[job.Provider]
+	if !exists {
+		errMsg := fmt.Sprintf("unknown provider: %s", job.Provider)
+		bs.db.UpdateScrapeJob(job.ID, database.JobStatusFailed, &errMsg, 0)
+		bs.notifyUpdate(job.SeriesID, series.Title, job.Provider, "failed", errMsg)
+		return
+	}
+	
+	// Perform the scraping with the specific provider
+	info, err := provider.Fetch(seriesIDs)
 	if err != nil {
 		log.Printf("worker %d failed to scrape series %d: %v", workerID, job.SeriesID, err)
 		// Create empty info to clear stale data from database

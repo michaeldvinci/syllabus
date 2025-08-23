@@ -218,6 +218,25 @@ func (s *Store) ResetUserPassword(username, newPassword string) error {
 	return nil
 }
 
+// DeleteUser deletes a user by username
+func (s *Store) DeleteUser(username string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	// Check if user exists
+	if _, exists := s.users[username]; !exists {
+		return ErrUserNotFound
+	}
+	
+	// Delete user
+	delete(s.users, username)
+	
+	// Save to file if persistence is enabled
+	s.save()
+	
+	return nil
+}
+
 // cleanupExpiredSessions runs periodically to clean up expired sessions
 func (s *Store) cleanupExpiredSessions() {
 	ticker := time.NewTicker(1 * time.Hour)

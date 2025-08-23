@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS series (
     audible_id TEXT,
     audible_url TEXT,
     amazon_asin TEXT,
+    audible_scraped_count INTEGER DEFAULT 0,
+    amazon_scraped_count INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -50,15 +52,15 @@ SELECT
     s.amazon_asin,
     s.updated_at,
     
-    -- Audible stats
-    COUNT(CASE WHEN b.provider = 'audible' THEN 1 END) as audible_count,
+    -- Audible stats (use scraped count, not calculated count)
+    s.audible_scraped_count as audible_count,
     MAX(CASE WHEN b.provider = 'audible' AND b.is_latest = 1 THEN b.title END) as audible_latest_title,
     MAX(CASE WHEN b.provider = 'audible' AND b.is_latest = 1 THEN b.release_date END) as audible_latest_date,
     MAX(CASE WHEN b.provider = 'audible' AND b.is_preorder = 1 THEN b.title END) as audible_next_title,
     MAX(CASE WHEN b.provider = 'audible' AND b.is_preorder = 1 THEN b.release_date END) as audible_next_date,
     
-    -- Amazon stats  
-    COUNT(CASE WHEN b.provider = 'amazon' THEN 1 END) as amazon_count,
+    -- Amazon stats (use scraped count, not calculated count)
+    s.amazon_scraped_count as amazon_count,
     MAX(CASE WHEN b.provider = 'amazon' AND b.is_latest = 1 THEN b.title END) as amazon_latest_title,
     MAX(CASE WHEN b.provider = 'amazon' AND b.is_latest = 1 THEN b.release_date END) as amazon_latest_date,
     MAX(CASE WHEN b.provider = 'amazon' AND b.is_preorder = 1 THEN b.title END) as amazon_next_title,
@@ -66,7 +68,7 @@ SELECT
     
 FROM series s
 LEFT JOIN books b ON s.id = b.series_id
-GROUP BY s.id, s.title, s.audible_id, s.amazon_asin, s.updated_at;
+GROUP BY s.id, s.title, s.audible_id, s.amazon_asin, s.updated_at, s.audible_scraped_count, s.amazon_scraped_count;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_books_series_provider ON books(series_id, provider);
@@ -86,3 +88,14 @@ AFTER UPDATE ON books
 BEGIN
     UPDATE series SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.series_id;
 END;
+
+-- Runtime settings table - stores configuration changes made through the UI
+CREATE TABLE IF NOT EXISTS runtime_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default runtime settings
+INSERT OR IGNORE INTO runtime_settings (key, value) VALUES 
+    ('auto_refresh_interval', '6');

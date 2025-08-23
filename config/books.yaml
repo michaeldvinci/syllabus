@@ -1,4 +1,13 @@
 ---
+# Application Settings (optional - defaults will be used if not specified)
+settings:
+  auto_refresh_interval: 6  # Hours between auto-refreshes (default: 6)
+  default_workers: 4        # Number of scraper workers (default: 4)  
+  server_port: 8080         # Server port (default: 8080)
+  cache_timeout: 6          # Cache timeout in hours (default: 6)
+  log_level: "info"         # Log level: debug, info, warn, error (default: info)
+
+# Audiobook/Ebook Series Configuration
 audiobooks:
   - title: "1% Lifesteal"
     audible: "https://www.audible.com/series/1-Lifesteal-Audiobooks/B0F8QMLV9T"

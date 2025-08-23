@@ -1,0 +1,17 @@
+---
+# Example configuration file showing all available settings
+# Copy to books.yaml and customize as needed
+
+# Application Settings (all optional - defaults shown)
+settings:
+  auto_refresh_interval: 6  # Hours between automatic data refreshes
+  default_workers: 4        # Number of concurrent scraper workers  
+  server_port: 8080         # Port for the web server
+  cache_timeout: 6          # Cache timeout in hours
+  log_level: "info"         # Logging level: debug, info, warn, error
+
+# Audiobook/Ebook Series Configuration
+audiobooks:
+  - title: "Example Series"
+    audible: "https://www.audible.com/series/..."
+    amazon: "https://www.amazon.com/dp/..."

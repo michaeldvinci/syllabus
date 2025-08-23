@@ -153,6 +153,19 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 	}
 	defer tx.Rollback()
 
+	// Update scraped counts in series table
+	if provider == ProviderAudible {
+		_, err = tx.Exec(`UPDATE series SET audible_scraped_count = ? WHERE id = ?`, info.AudibleCount, seriesID)
+		if err != nil {
+			return fmt.Errorf("failed to update audible scraped count: %w", err)
+		}
+	} else if provider == ProviderAmazon {
+		_, err = tx.Exec(`UPDATE series SET amazon_scraped_count = ? WHERE id = ?`, info.AmazonCount, seriesID)
+		if err != nil {
+			return fmt.Errorf("failed to update amazon scraped count: %w", err)
+		}
+	}
+
 	// Clear existing books for this series/provider
 	_, err = tx.Exec(`DELETE FROM books WHERE series_id = ? AND provider = ?`, seriesID, provider)
 	if err != nil {
@@ -243,6 +256,28 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 	}
 
 	return tx.Commit()
+}
+
+// GetRuntimeSetting gets a runtime setting value from the database
+func (s *Service) GetRuntimeSetting(key string) (string, error) {
+	var value string
+	query := `SELECT value FROM runtime_settings WHERE key = ?`
+	err := s.db.QueryRow(query, key).Scan(&value)
+	if err != nil {
+		return "", fmt.Errorf("failed to get runtime setting %s: %w", key, err)
+	}
+	return value, nil
+}
+
+// SetRuntimeSetting updates or creates a runtime setting in the database
+func (s *Service) SetRuntimeSetting(key, value string) error {
+	query := `INSERT OR REPLACE INTO runtime_settings (key, value, updated_at) 
+	          VALUES (?, ?, CURRENT_TIMESTAMP)`
+	_, err := s.db.Exec(query, key, value)
+	if err != nil {
+		return fmt.Errorf("failed to set runtime setting %s: %w", key, err)
+	}
+	return nil
 }
 
 // CreateScrapeJob creates a new scrape job
@@ -412,6 +447,17 @@ func (s *Service) CleanupStaleRunningJobs() error {
 	}
 	
 	return nil
+}
+
+// GetLastScrapeTime returns the most recent scrape start time (when any scrape was initiated)
+func (s *Service) GetLastScrapeTime() (*time.Time, error) {
+	query := `SELECT MAX(started_at) FROM scrape_jobs WHERE started_at IS NOT NULL`
+	var lastScrape *time.Time
+	err := s.db.QueryRow(query).Scan(&lastScrape)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return lastScrape, err
 }
 
 // nilIfEmpty returns nil for empty strings, otherwise returns pointer to string

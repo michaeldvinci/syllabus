@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -25,13 +26,14 @@ type App struct {
 	Data              []models.SeriesIDs
 	RefreshChan       chan bool
 	ScraperUpdateCh   <-chan scraper.SeriesUpdate // Channel for scraper updates
-	BackgroundScraper *scraper.BackgroundScraper   // Reference to background scraper
-	mu                sync.RWMutex                 // Protect Data updates
-	
+	BackgroundScraper *scraper.BackgroundScraper  // Reference to background scraper
+	Settings          models.Settings             // Application settings from config
+	mu                sync.RWMutex                // Protect Data updates
+
 	// Auto-refresh functionality
-	autoRefreshInterval int           // Hours between auto-refreshes
-	autoRefreshTicker   *time.Ticker  // Ticker for auto-refresh
-	autoRefreshMu       sync.RWMutex  // Protect auto-refresh settings
+	autoRefreshInterval int          // Hours between auto-refreshes
+	autoRefreshTicker   *time.Ticker // Ticker for auto-refresh
+	autoRefreshMu       sync.RWMutex // Protect auto-refresh settings
 }
 
 // Row represents a table row in the HTML template
@@ -49,11 +51,12 @@ type Row struct {
 
 // Page represents the complete page data for the HTML template
 type Page struct {
-	Rows        []Row
-	Now         string
-	CalendarURL string
-	User        *auth.User
+	Rows          []Row
+	Now           string
+	CalendarURL   string
+	User          *auth.User
 	Authenticated bool
+	LastScrape    string
 }
 
 // HandleIndex serves the main HTML page
@@ -62,7 +65,6 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 	infos := a.collectAll()
 	for _, info := range infos {
-		// Reset variables for each series to prevent bleeding across rows
 		audibleLatest := formatDateOnly(info.AudibleLatestDate)
 		audibleNext := formatDateOnly(info.AudibleNextDate)
 		audURL := ""
@@ -87,7 +89,7 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate the calendar URL based on the request
-	calendarURL := fmt.Sprintf("%s://%s/calendar.ics", 
+	calendarURL := fmt.Sprintf("%s://%s/calendar.ics",
 		func() string {
 			if r.TLS != nil {
 				return "https"
@@ -97,16 +99,35 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 	// Get current user from context if available
 	user, authenticated := auth.GetUserFromContext(r)
-	
-	tpl := template.Must(template.New("idx").Parse(IndexHTML))
+
+	// Get last scrape timestamp
+	lastScrapeTime, err := a.DB.GetLastScrapeTime()
+	lastScrapeStr := "Never"
+	if err == nil && lastScrapeTime != nil {
+		lastScrapeStr = lastScrapeTime.Format("Jan 2, 2006 at 3:04 PM")
+	}
+
+	// Helpers (maxWidth kept for backward-compat; not used in current template)
+	funcs := template.FuncMap{
+		"maxWidth": func(px int) string { return fmt.Sprintf("%dpx", px) },
+	}
+
+	tpl, err := template.New("idx").Funcs(funcs).Parse(IndexHTML)
+	if err != nil {
+		log.Printf("parse template: %v", err)
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
+
 	if err := tpl.Execute(w, Page{
-		Rows:        rows, 
-		Now:         time.Now().Format(time.RFC822),
-		CalendarURL: calendarURL,
-		User:        user,
+		Rows:          rows,
+		Now:           time.Now().Format(time.RFC822),
+		CalendarURL:   calendarURL,
+		User:          user,
 		Authenticated: authenticated,
+		LastScrape:    lastScrapeStr,
 	}); err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -115,6 +136,28 @@ func (a *App) HandleAPI(w http.ResponseWriter, r *http.Request) {
 	infos := a.collectAll()
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(infos)
+}
+
+// HandleScrapeStatus returns the current scrape job status
+func (a *App) HandleScrapeStatus(w http.ResponseWriter, r *http.Request) {
+	// Get count of active scrape jobs (running or pending)
+	jobs, err := a.DB.GetPendingScrapeJobs()
+	if err != nil {
+		http.Error(w, "Failed to get scrape status", http.StatusInternalServerError)
+		return
+	}
+
+	activeJobs := 0
+	for _, job := range jobs {
+		if job.Status == "running" || job.Status == "pending" {
+			activeJobs++
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{
+		"activeJobs": activeJobs,
+	})
 }
 
 // HandleICal serves the iCal export endpoint
@@ -143,8 +186,6 @@ func (a *App) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jobsQueued := 0
-	
-	// Queue scraping jobs for all series (both providers)
 	for _, stat := range stats {
 		if stat.AudibleID != nil {
 			jobsQueued++
@@ -154,29 +195,21 @@ func (a *App) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Clear all existing book data before refresh to prevent stale data corruption
-	// This is a temporary fix for the cascading date issue
 	log.Printf("clearing all book data before refresh to prevent corruption")
 	if err := a.DB.ClearAllBookData(); err != nil {
 		log.Printf("warning: failed to clear book data: %v", err)
 	}
-	
-	// Use the background scraper to queue all series for refresh
+
 	if a.BackgroundScraper != nil {
-		err := a.BackgroundScraper.QueueAllSeriesUpdate()
-		if err != nil {
+		if err := a.BackgroundScraper.QueueAllSeriesUpdate(); err != nil {
 			log.Printf("error queuing refresh jobs: %v", err)
 			http.Error(w, "Failed to queue refresh jobs", http.StatusInternalServerError)
 			return
 		}
 		log.Printf("queued refresh jobs for all series")
-		
-		// Also send refresh signal for UI updates
 		select {
 		case a.RefreshChan <- true:
-			log.Printf("refresh signal sent")
 		default:
-			log.Printf("refresh channel full, signal dropped")
 		}
 	} else {
 		log.Printf("background scraper not available")
@@ -195,16 +228,12 @@ func (a *App) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) collectAll() []models.SeriesInfo {
-	// Get data from database instead of scraping
 	stats, err := a.DB.GetAllSeriesStats()
 	if err != nil {
 		log.Printf("error fetching series stats from database: %v", err)
 		return []models.SeriesInfo{}
 	}
-	
-	infos := database.ToSeriesInfoSlice(stats)
-	
-	return infos
+	return database.ToSeriesInfoSlice(stats)
 }
 
 // WarmupCache is now a no-op since data comes from database
@@ -218,12 +247,9 @@ func (a *App) HandleEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	
-	// Send initial connection event
 	fmt.Fprintf(w, "data: connected\n\n")
 	w.(http.Flusher).Flush()
-	
-	// Listen for refresh signals and scraper updates
+
 	for {
 		select {
 		case <-r.Context().Done():
@@ -232,7 +258,6 @@ func (a *App) HandleEvents(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "data: refresh\n\n")
 			w.(http.Flusher).Flush()
 		case update := <-a.ScraperUpdateCh:
-			// Send scraper update as JSON
 			updateJSON, _ := json.Marshal(update)
 			fmt.Fprintf(w, "data: %s\n\n", updateJSON)
 			w.(http.Flusher).Flush()
@@ -240,20 +265,17 @@ func (a *App) HandleEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// findNewEntries compares old and new data to identify new series
 func (a *App) findNewEntries(newData []models.SeriesIDs) []models.SeriesIDs {
 	a.mu.RLock()
 	oldData := a.Data
 	a.mu.RUnlock()
-	
-	// Create a map of existing entries for fast lookup
+
 	existing := make(map[string]bool)
 	for _, series := range oldData {
 		key := series.Title + "|" + series.AudibleID + "|" + series.AmazonASIN
 		existing[key] = true
 	}
-	
-	// Find entries that don't exist in the old data
+
 	var newEntries []models.SeriesIDs
 	for _, series := range newData {
 		key := series.Title + "|" + series.AudibleID + "|" + series.AmazonASIN
@@ -261,27 +283,20 @@ func (a *App) findNewEntries(newData []models.SeriesIDs) []models.SeriesIDs {
 			newEntries = append(newEntries, series)
 		}
 	}
-	
 	return newEntries
 }
 
-// UpdateDataIncremental adds only new entries and triggers refresh
 func (a *App) UpdateDataIncremental(newData []models.SeriesIDs) {
 	newEntries := a.findNewEntries(newData)
-	
 	if len(newEntries) == 0 {
 		log.Printf("no new entries found in config update")
 		return
 	}
-	
-	log.Printf("found %d new entries to scrape", len(newEntries))
-	
-	// Update the data atomically
+
 	a.mu.Lock()
 	a.Data = newData
 	a.mu.Unlock()
-	
-	// Scrape only the new entries in background
+
 	go func() {
 		log.Printf("scraping %d new entries...", len(newEntries))
 		for _, entry := range newEntries {
@@ -295,8 +310,6 @@ func (a *App) UpdateDataIncremental(newData []models.SeriesIDs) {
 				log.Printf("scraped new entry: %s", entry.Title)
 			}
 		}
-		
-		// Trigger refresh for all connected clients
 		select {
 		case a.RefreshChan <- true:
 		default:
@@ -305,13 +318,11 @@ func (a *App) UpdateDataIncremental(newData []models.SeriesIDs) {
 	}()
 }
 
-// ReloadData clears cache and reloads series data (fallback for major changes)
 func (a *App) ReloadData(newData []models.SeriesIDs) {
 	a.Cache.Clear()
 	a.mu.Lock()
 	a.Data = newData
 	a.mu.Unlock()
-	// Trigger refresh for all connected clients
 	select {
 	case a.RefreshChan <- true:
 	default:
@@ -338,81 +349,93 @@ func formatDateOnly(d *time.Time) string {
 	return d.Format("2006-01-02")
 }
 
-// HandleAutoRefresh handles auto-refresh interval updates
+// Auto-refresh handlers (unchanged)
 func (a *App) HandleAutoRefresh(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+	switch r.Method {
+	case http.MethodGet:
+		a.autoRefreshMu.RLock()
+		interval := a.autoRefreshInterval
+		a.autoRefreshMu.RUnlock()
 
-	var req struct {
-		Interval int `json:"interval"`
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"interval": interval,
+		})
+
+	case http.MethodPost:
+		// Update auto-refresh interval
+		var req struct {
+			Interval int `json:"interval"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request", http.StatusBadRequest)
+			return
+		}
+
+		// Validate interval (2, 4, 6, 8, 10 hours)
+		if req.Interval < 2 || req.Interval > 10 || req.Interval%2 != 0 {
+			http.Error(w, "Invalid interval", http.StatusBadRequest)
+			return
+		}
+
+		// Update the auto-refresh interval
+		a.SetAutoRefreshInterval(req.Interval)
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":  true,
+			"interval": req.Interval,
+		})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
-	
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-	
-	// Validate interval (2, 4, 6, 8, 10 hours)
-	if req.Interval < 2 || req.Interval > 10 || req.Interval%2 != 0 {
-		http.Error(w, "Invalid interval", http.StatusBadRequest)
-		return
-	}
-	
-	// Update the auto-refresh interval
-	a.SetAutoRefreshInterval(req.Interval)
-	
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"interval": req.Interval,
-	})
 }
 
-// SetAutoRefreshInterval updates the auto-refresh interval and restarts the ticker
 func (a *App) SetAutoRefreshInterval(hours int) {
 	a.autoRefreshMu.Lock()
 	defer a.autoRefreshMu.Unlock()
-	
+	if a.autoRefreshInterval == hours && a.autoRefreshTicker != nil {
+		return
+	}
 	a.autoRefreshInterval = hours
-	
-	// Stop existing ticker if it exists
+	if err := a.DB.SetRuntimeSetting("auto_refresh_interval", strconv.Itoa(hours)); err != nil {
+		log.Printf("warning: failed to save auto-refresh interval to database: %v", err)
+	}
 	if a.autoRefreshTicker != nil {
 		a.autoRefreshTicker.Stop()
 	}
-	
-	// Start new ticker with updated interval
 	a.autoRefreshTicker = time.NewTicker(time.Duration(hours) * time.Hour)
 	log.Printf("auto-refresh interval updated to %d hours", hours)
 }
 
-// StartAutoRefresh starts the automatic refresh loop
 func (a *App) StartAutoRefresh() {
-	// Default to 6 hours if not set
 	a.autoRefreshMu.Lock()
 	if a.autoRefreshInterval == 0 {
-		a.autoRefreshInterval = 6
+		if dbValue, err := a.DB.GetRuntimeSetting("auto_refresh_interval"); err == nil {
+			if val, err := strconv.Atoi(dbValue); err == nil && val > 0 {
+				a.autoRefreshInterval = val
+				log.Printf("loaded auto-refresh interval from database: %d hours", val)
+			}
+		}
+		if a.autoRefreshInterval == 0 {
+			a.autoRefreshInterval = a.Settings.AutoRefreshInterval
+			log.Printf("using config auto-refresh interval: %d hours", a.autoRefreshInterval)
+		}
 	}
 	interval := a.autoRefreshInterval
 	a.autoRefreshMu.Unlock()
-	
-	// Set initial ticker
+
 	a.SetAutoRefreshInterval(interval)
-	
-	// Start the auto-refresh goroutine
+
 	go func() {
 		log.Printf("starting auto-refresh loop with %d hour interval", interval)
-		
 		for range a.autoRefreshTicker.C {
 			log.Printf("triggering scheduled data refresh...")
-			
-			// Clear all existing book data before refresh
 			if err := a.DB.ClearAllBookData(); err != nil {
 				log.Printf("warning: failed to clear book data during auto-refresh: %v", err)
 			}
-			
-			// Queue refresh jobs for all series
 			if a.BackgroundScraper != nil {
 				if err := a.BackgroundScraper.QueueAllSeriesUpdate(); err != nil {
 					log.Printf("error queuing auto-refresh jobs: %v", err)
@@ -424,11 +447,9 @@ func (a *App) StartAutoRefresh() {
 	}()
 }
 
-// StopAutoRefresh stops the automatic refresh loop
 func (a *App) StopAutoRefresh() {
 	a.autoRefreshMu.Lock()
 	defer a.autoRefreshMu.Unlock()
-	
 	if a.autoRefreshTicker != nil {
 		a.autoRefreshTicker.Stop()
 		a.autoRefreshTicker = nil

@@ -9,13 +9,13 @@ I call it `syllabus` because it's a list of things to read.
 Perfect for homelab deployment with Docker Compose for automated audiobook series tracking. 
 
 ### Desktop
-<img alt="syllabus-desktop" src="res/syllabus-desktop.png" height="600" width="900">
+<img alt="syllabus-desktop" src="res/syllabus-main.png" height="600" width="900">
+
+### Search
+<img alt="syllabus-desktop" src="res/syllabus-search.png" height="600" width="900">
 
 ### Settings
 <img alt="syllabus-desktop" src="res/syllabus-settings.png" height="600" width="900">
-
-### Mobile
-<img alt="syllabus-mobile" src="res/syllabus-mobile.png" height="700" width="375">
 
 ## Features
 
@@ -59,9 +59,18 @@ Perfect for homelab deployment with Docker Compose for automated audiobook serie
 
 ## Configuration
 
-YAML schema:
+YAML schema with optional application settings:
 
 ```yaml
+# Application Settings (optional - defaults shown)
+settings:
+  auto_refresh_interval: 6  # Hours between automatic data refreshes (default: 6)
+  default_workers: 4        # Number of concurrent scraper workers (default: 4)  
+  server_port: 8080         # Port for the web server (default: 8080)
+  cache_timeout: 6          # Cache timeout in hours (default: 6)
+  log_level: "info"         # Logging level: debug, info, warn, error (default: info)
+
+# Audiobook/Ebook Series Configuration
 audiobooks:
   - title: "1% Lifesteal"
     audible: "https://www.audible.com/series/1-Lifesteal-Audiobooks/B0F8QMLV9T"
@@ -71,7 +80,31 @@ audiobooks:
     amazon: "https://www.amazon.com/dp/B0CW18NDBQ"
 ```
 
-Only title, audible, and amazon are required for scraping.
+**Required fields:** Only `title`, `audible`, and `amazon` are required for scraping.
+
+**Settings section:** All settings are optional and will use sensible defaults if not specified. The settings section allows you to customize application behavior without modifying code.
+
+### Environment Variables (Docker Compose)
+
+For containerized deployments, you can override any setting using environment variables. Environment variables take precedence over YAML configuration:
+
+```yaml
+environment:
+  SYLLABUS_AUTO_REFRESH_INTERVAL: "4"  # Hours between auto-refreshes
+  SYLLABUS_DEFAULT_WORKERS: "2"        # Number of scraper workers  
+  SYLLABUS_SERVER_PORT: "8080"         # Server port
+  PORT: "8080"                         # Alternative port env var (standard)
+  SYLLABUS_CACHE_TIMEOUT: "6"          # Cache timeout in hours
+  SYLLABUS_LOG_LEVEL: "debug"          # Log level: debug, info, warn, error
+```
+
+**Configuration Priority:**
+1. **Runtime UI changes** (highest priority) - persisted to database
+2. **Environment Variables** - override YAML at startup
+3. **YAML Configuration** - file-based defaults  
+4. **Built-in Defaults** (lowest priority)
+
+**Database Persistence:** UI changes (like auto-refresh interval) are saved to the database and survive container restarts. The UI will always show the current server state.
 
 ## Installation & Deployment
 
@@ -81,12 +114,27 @@ Only title, audible, and amazon are required for scraping.
 git clone https://github.com/michaeldvinci/syllabus.git
 cd syllabus
 
-# Build and start
+# Basic deployment
 docker compose up -d
 
 # View logs
 docker compose logs -f
 ```
+
+**Customization with Environment Variables:**
+
+```bash
+# Copy example override file
+cp docker-compose.override.example.yaml docker-compose.override.yaml
+
+# Edit settings
+nano docker-compose.override.yaml
+
+# Deploy with custom settings
+docker compose up -d
+```
+
+The override file allows you to customize settings without modifying the main docker-compose.yaml file.
 
 ### Local Development
 
