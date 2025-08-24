@@ -8,10 +8,20 @@ services:
       - ./config:/config
       - ./data:/data
     # environment:
-      # Application Settings (override YAML config if set)
-      # SYLLABUS_AUTO_REFRESH_INTERVAL: "6"  # Hours between auto-refreshes
-      # SYLLABUS_DEFAULT_WORKERS: "4"        # Number of scraper workers
-      # SYLLABUS_SERVER_PORT: "8080"         # Server port (or use PORT)
-      # PORT: "8080"                         # Standard port env var (alternative)
-      # SYLLABUS_CACHE_TIMEOUT: "6"          # Cache timeout in hours
-      # SYLLABUS_LOG_LEVEL: "info"           # Log level: debug, info, warn, error
+      # ===== APPLICATION SETTINGS =====
+      # All settings below override YAML config values if set
+      
+      # Server Configuration
+      # SYLLABUS_SERVER_PORT: "8080"         # Server port (1-65535)
+      # PORT: "8080"                         # Standard port env var (alternative to SYLLABUS_SERVER_PORT)
+      
+      # Scraping Configuration  
+      # SYLLABUS_AUTO_REFRESH_INTERVAL: "6"  # Hours between auto-refreshes (>0)
+      # SYLLABUS_DEFAULT_WORKERS: "4"        # Number of concurrent scraper workers (>0)
+      # SYLLABUS_CACHE_TIMEOUT: "6"          # Scraper cache timeout in hours (>0)
+      
+      # UI Configuration
+      # SYLLABUS_MAIN_VIEW: "unified"        # Default view mode: "unified" or "tabbed"
+      
+      # Logging Configuration
+      # SYLLABUS_LOG_LEVEL: "info"           # Log level: "debug", "info", "warn", "error"
