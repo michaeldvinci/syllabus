@@ -28,7 +28,7 @@ func (s *Service) GetAllSeriesStats() ([]SeriesStats, error) {
 	    amazon_count, amazon_latest_title, amazon_latest_date,
 	    amazon_next_title, amazon_next_date
 	    FROM series_stats ORDER BY title`
-	
+
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query series stats: %w", err)
@@ -40,7 +40,7 @@ func (s *Service) GetAllSeriesStats() ([]SeriesStats, error) {
 		var stat SeriesStats
 		var audibleLatestDate, audibleNextDate, amazonLatestDate, amazonNextDate sql.NullString
 		var updatedAt string
-		
+
 		err := rows.Scan(
 			&stat.ID, &stat.Title, &stat.AudibleID, &stat.AmazonASIN, &updatedAt,
 			&stat.AudibleCount, &stat.AudibleLatestTitle, &audibleLatestDate,
@@ -51,7 +51,7 @@ func (s *Service) GetAllSeriesStats() ([]SeriesStats, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan series stats: %w", err)
 		}
-		
+
 		// Parse string dates to time.Time
 		if parsedTime, err := time.Parse("2006-01-02 15:04:05", updatedAt); err == nil {
 			stat.UpdatedAt = parsedTime
@@ -85,7 +85,7 @@ func (s *Service) GetAllSeriesStats() ([]SeriesStats, error) {
 				stat.AmazonNextDate = &parsedTime
 			}
 		}
-		
+
 		stats = append(stats, stat)
 	}
 
@@ -98,46 +98,46 @@ func (s *Service) UpsertSeries(title, audibleID, audibleURL, amazonASIN string) 
 	var series Series
 	query := `SELECT id, title, audible_id, audible_url, amazon_asin, created_at, updated_at 
 	          FROM series WHERE title = ?`
-	
+
 	err := s.db.QueryRow(query, title).Scan(
-		&series.ID, &series.Title, &series.AudibleID, &series.AudibleURL, 
+		&series.ID, &series.Title, &series.AudibleID, &series.AudibleURL,
 		&series.AmazonASIN, &series.CreatedAt, &series.UpdatedAt,
 	)
-	
+
 	if err == sql.ErrNoRows {
 		// Insert new series
 		insertQuery := `INSERT INTO series (title, audible_id, audible_url, amazon_asin) 
 		                VALUES (?, ?, ?, ?) RETURNING id, created_at, updated_at`
-		
-		err = s.db.QueryRow(insertQuery, title, nilIfEmpty(audibleID), 
+
+		err = s.db.QueryRow(insertQuery, title, nilIfEmpty(audibleID),
 			nilIfEmpty(audibleURL), nilIfEmpty(amazonASIN)).Scan(
 			&series.ID, &series.CreatedAt, &series.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to insert series: %w", err)
 		}
-		
+
 		series.Title = title
 		series.AudibleID = nilIfEmpty(audibleID)
 		series.AudibleURL = nilIfEmpty(audibleURL)
 		series.AmazonASIN = nilIfEmpty(amazonASIN)
-		
+
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to query series: %w", err)
 	} else {
 		// Update existing series
 		updateQuery := `UPDATE series SET audible_id = ?, audible_url = ?, amazon_asin = ?, updated_at = CURRENT_TIMESTAMP 
 		                WHERE id = ?`
-		
-		_, err = s.db.Exec(updateQuery, nilIfEmpty(audibleID), nilIfEmpty(audibleURL), 
+
+		_, err = s.db.Exec(updateQuery, nilIfEmpty(audibleID), nilIfEmpty(audibleURL),
 			nilIfEmpty(amazonASIN), series.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to update series: %w", err)
 		}
-		
+
 		// Update local struct
 		series.AudibleID = nilIfEmpty(audibleID)
-		series.AudibleURL = nilIfEmpty(audibleURL)  
+		series.AudibleURL = nilIfEmpty(audibleURL)
 		series.AmazonASIN = nilIfEmpty(amazonASIN)
 		series.UpdatedAt = time.Now()
 	}
@@ -179,7 +179,7 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 			title := fmt.Sprintf("Book %d", i)
 			isLatest := (i == info.AudibleCount)
 			var releaseDate *time.Time
-			
+
 			// Use actual title and date for the latest book if available
 			if isLatest && info.AudibleLatestTitle != "" {
 				title = info.AudibleLatestTitle
@@ -187,7 +187,7 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 			if isLatest {
 				releaseDate = info.AudibleLatestDate
 			}
-			
+
 			_, err = tx.Exec(`
 				INSERT INTO books (series_id, provider, title, book_number, release_date, is_latest) 
 				VALUES (?, ?, ?, ?, ?, ?)`,
@@ -206,7 +206,7 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 			_, err = tx.Exec(`
 				INSERT INTO books (series_id, provider, title, book_number, release_date, is_preorder) 
 				VALUES (?, ?, ?, ?, ?, ?)`,
-				seriesID, provider, nextTitle, info.AudibleCount+1, 
+				seriesID, provider, nextTitle, info.AudibleCount+1,
 				info.AudibleNextDate, true)
 			if err != nil {
 				return fmt.Errorf("failed to insert audible next book: %w", err)
@@ -220,7 +220,7 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 			title := fmt.Sprintf("Book %d", i)
 			isLatest := (i == info.AmazonCount)
 			var releaseDate *time.Time
-			
+
 			// Use actual title and date for the latest book if available
 			if isLatest && info.AmazonLatestTitle != "" {
 				title = info.AmazonLatestTitle
@@ -228,7 +228,7 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 			if isLatest {
 				releaseDate = info.AmazonLatestDate
 			}
-			
+
 			_, err = tx.Exec(`
 				INSERT INTO books (series_id, provider, title, book_number, release_date, is_latest) 
 				VALUES (?, ?, ?, ?, ?, ?)`,
@@ -247,7 +247,7 @@ func (s *Service) UpdateSeriesBooks(seriesID int, provider string, info models.S
 			_, err = tx.Exec(`
 				INSERT INTO books (series_id, provider, title, book_number, release_date, is_preorder) 
 				VALUES (?, ?, ?, ?, ?, ?)`,
-				seriesID, provider, nextTitle, info.AmazonCount+1, 
+				seriesID, provider, nextTitle, info.AmazonCount+1,
 				info.AmazonNextDate, true)
 			if err != nil {
 				return fmt.Errorf("failed to insert amazon next book: %w", err)
@@ -284,17 +284,17 @@ func (s *Service) SetRuntimeSetting(key, value string) error {
 func (s *Service) CreateScrapeJob(seriesID int, provider string) (*ScrapeJob, error) {
 	query := `INSERT INTO scrape_jobs (series_id, provider) VALUES (?, ?) 
 	          RETURNING id, created_at`
-	
+
 	var job ScrapeJob
 	err := s.db.QueryRow(query, seriesID, provider).Scan(&job.ID, &job.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create scrape job: %w", err)
 	}
-	
+
 	job.SeriesID = seriesID
 	job.Provider = provider
 	job.Status = JobStatusPending
-	
+
 	return &job, nil
 }
 
@@ -302,9 +302,9 @@ func (s *Service) CreateScrapeJob(seriesID int, provider string) (*ScrapeJob, er
 func (s *Service) UpdateScrapeJob(jobID int, status string, errorMsg *string, bookCount int) error {
 	var query string
 	var args []interface{}
-	
+
 	now := time.Now()
-	
+
 	switch status {
 	case JobStatusRunning:
 		query = `UPDATE scrape_jobs SET status = ?, started_at = ? WHERE id = ?`
@@ -324,7 +324,7 @@ func (s *Service) UpdateScrapeJob(jobID int, status string, errorMsg *string, bo
 	if err != nil {
 		return fmt.Errorf("failed to update scrape job: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -333,7 +333,7 @@ func (s *Service) GetPendingScrapeJobs() ([]ScrapeJob, error) {
 	query := `SELECT id, series_id, provider, status, started_at, completed_at, 
 	                 error_message, book_count, created_at 
 	          FROM scrape_jobs WHERE status = ? ORDER BY created_at`
-	
+
 	rows, err := s.db.Query(query, JobStatusPending)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query pending jobs: %w", err)
@@ -344,7 +344,7 @@ func (s *Service) GetPendingScrapeJobs() ([]ScrapeJob, error) {
 	for rows.Next() {
 		var job ScrapeJob
 		err := rows.Scan(&job.ID, &job.SeriesID, &job.Provider, &job.Status,
-			&job.StartedAt, &job.CompletedAt, &job.ErrorMessage, 
+			&job.StartedAt, &job.CompletedAt, &job.ErrorMessage,
 			&job.BookCount, &job.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan scrape job: %w", err)
@@ -359,13 +359,13 @@ func (s *Service) GetPendingScrapeJobs() ([]ScrapeJob, error) {
 func (s *Service) HasActiveScrapeJob(seriesID int, provider string) (bool, error) {
 	query := `SELECT COUNT(*) FROM scrape_jobs 
 	          WHERE series_id = ? AND provider = ? AND status IN (?, ?)`
-	
+
 	var count int
 	err := s.db.QueryRow(query, seriesID, provider, JobStatusPending, JobStatusRunning).Scan(&count)
 	if err != nil {
 		return false, fmt.Errorf("failed to check active jobs: %w", err)
 	}
-	
+
 	return count > 0, nil
 }
 
@@ -373,19 +373,19 @@ func (s *Service) HasActiveScrapeJob(seriesID int, provider string) (bool, error
 func (s *Service) GetSeriesByTitle(title string) (*Series, error) {
 	query := `SELECT id, title, audible_id, audible_url, amazon_asin, created_at, updated_at 
 	          FROM series WHERE title = ?`
-	
+
 	var series Series
 	err := s.db.QueryRow(query, title).Scan(
 		&series.ID, &series.Title, &series.AudibleID, &series.AudibleURL,
 		&series.AmazonASIN, &series.CreatedAt, &series.UpdatedAt,
 	)
-	
+
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to query series: %w", err)
 	}
-	
+
 	return &series, nil
 }
 
@@ -393,19 +393,19 @@ func (s *Service) GetSeriesByTitle(title string) (*Series, error) {
 func (s *Service) GetSeriesByID(id int) (*Series, error) {
 	query := `SELECT id, title, audible_id, audible_url, amazon_asin, created_at, updated_at 
 	          FROM series WHERE id = ?`
-	
+
 	var series Series
 	err := s.db.QueryRow(query, id).Scan(
 		&series.ID, &series.Title, &series.AudibleID, &series.AudibleURL,
 		&series.AmazonASIN, &series.CreatedAt, &series.UpdatedAt,
 	)
-	
+
 	if err == sql.ErrNoRows {
 		return nil, nil
 	} else if err != nil {
 		return nil, fmt.Errorf("failed to query series by ID: %w", err)
 	}
-	
+
 	return &series, nil
 }
 
@@ -422,16 +422,16 @@ func (s *Service) ClearAllBookData() error {
 // CleanupStaleRunningJobs marks all running and old pending jobs as failed (for startup cleanup)
 func (s *Service) CleanupStaleRunningJobs() error {
 	errorMsg := "job interrupted by application restart"
-	
+
 	// Clean up running jobs
 	query1 := `UPDATE scrape_jobs SET status = ?, completed_at = CURRENT_TIMESTAMP, error_message = ? WHERE status = ?`
 	result1, err := s.db.Exec(query1, JobStatusFailed, errorMsg, JobStatusRunning)
 	if err != nil {
 		return fmt.Errorf("failed to cleanup stale running jobs: %w", err)
 	}
-	
+
 	runningCleaned, _ := result1.RowsAffected()
-	
+
 	// Clean up ALL pending jobs on startup (they were never processed)
 	query2 := `UPDATE scrape_jobs SET status = ?, completed_at = CURRENT_TIMESTAMP, error_message = ? 
 	          WHERE status = ?`
@@ -439,13 +439,13 @@ func (s *Service) CleanupStaleRunningJobs() error {
 	if err != nil {
 		return fmt.Errorf("failed to cleanup stale pending jobs: %w", err)
 	}
-	
+
 	pendingCleaned, _ := result2.RowsAffected()
-	
+
 	if runningCleaned > 0 || pendingCleaned > 0 {
 		fmt.Printf("cleaned up %d stale running jobs and %d stale pending jobs\n", runningCleaned, pendingCleaned)
 	}
-	
+
 	return nil
 }
 
@@ -458,6 +458,70 @@ func (s *Service) GetLastScrapeTime() (*time.Time, error) {
 		return nil, nil
 	}
 	return lastScrape, err
+}
+
+// GetAllSeries returns all series from the database
+func (s *Service) GetAllSeries() ([]Series, error) {
+	query := `SELECT id, title, audible_id, audible_url, amazon_asin, created_at, updated_at FROM series ORDER BY title`
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var series []Series
+	for rows.Next() {
+		var s Series
+		err := rows.Scan(&s.ID, &s.Title, &s.AudibleID, &s.AudibleURL, &s.AmazonASIN, &s.CreatedAt, &s.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		series = append(series, s)
+	}
+	return series, rows.Err()
+}
+
+// DeleteSeries deletes a series and all its associated data
+func (s *Service) DeleteSeries(seriesID int) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Delete scrape jobs first (foreign key constraint)
+	_, err = tx.Exec("DELETE FROM scrape_jobs WHERE series_id = ?", seriesID)
+	if err != nil {
+		return err
+	}
+
+	// Delete books (foreign key constraint)
+	_, err = tx.Exec("DELETE FROM books WHERE series_id = ?", seriesID)
+	if err != nil {
+		return err
+	}
+
+	// Finally delete the series
+	_, err = tx.Exec("DELETE FROM series WHERE id = ?", seriesID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// DeleteSeriesByTitle deletes a series (and associated data) by its title
+func (s *Service) DeleteSeriesByTitle(title string) error {
+	// Look up the series by title first
+	series, err := s.GetSeriesByTitle(title)
+	if err != nil {
+		return err
+	}
+	if series == nil {
+		return sql.ErrNoRows
+	}
+	// Reuse the existing deletion logic by ID
+	return s.DeleteSeries(series.ID)
 }
 
 // nilIfEmpty returns nil for empty strings, otherwise returns pointer to string

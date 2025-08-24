@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"sync"
 	"time"
@@ -227,6 +228,92 @@ func (a *App) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// HandleAddSeries handles adding a new series to the database
+func (a *App) HandleAddSeries(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Title   string `json:"title"`
+		Audible string `json:"audible"`
+		Amazon  string `json:"amazon"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Validate required fields
+	if req.Title == "" {
+		http.Error(w, "Title is required", http.StatusBadRequest)
+		return
+	}
+
+	if req.Audible == "" && req.Amazon == "" {
+		http.Error(w, "At least one URL (Audible or Amazon) is required", http.StatusBadRequest)
+		return
+	}
+
+	// Extract IDs from URLs
+	audibleID := ""
+	amazonASIN := ""
+
+	if req.Audible != "" {
+		// Extract Audible ID from URL
+		if matches := regexp.MustCompile(`/series/[^/]*?([A-Z0-9]{10})`).FindStringSubmatch(req.Audible); len(matches) > 1 {
+			audibleID = matches[1]
+		}
+	}
+
+	if req.Amazon != "" {
+		// Extract Amazon ASIN from URL
+		if matches := regexp.MustCompile(`/dp/([A-Z0-9]{10})`).FindStringSubmatch(req.Amazon); len(matches) > 1 {
+			amazonASIN = matches[1]
+		}
+	}
+
+	// Add series to database
+	series, err := a.DB.UpsertSeries(req.Title, audibleID, req.Audible, amazonASIN)
+	if err != nil {
+		log.Printf("error adding series %s: %v", req.Title, err)
+		http.Error(w, "Failed to add series", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("added new series: %s (ID: %d)", req.Title, series.ID)
+
+	// Queue scraping jobs for the new series
+	if a.BackgroundScraper != nil {
+		if audibleID != "" {
+			if err := a.BackgroundScraper.QueueSeriesUpdate(series.ID, "audible"); err != nil {
+				log.Printf("error queuing audible scrape for %s: %v", req.Title, err)
+			}
+		}
+		if amazonASIN != "" {
+			if err := a.BackgroundScraper.QueueSeriesUpdate(series.ID, "amazon"); err != nil {
+				log.Printf("error queuing amazon scrape for %s: %v", req.Title, err)
+			}
+		}
+	}
+
+	// Trigger data refresh
+	select {
+	case a.RefreshChan <- true:
+	default:
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"success": true,
+		"message": "Series added successfully",
+		"series":  series,
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
 func (a *App) collectAll() []models.SeriesInfo {
 	stats, err := a.DB.GetAllSeriesStats()
 	if err != nil {
@@ -346,7 +433,9 @@ func formatDateOnly(d *time.Time) string {
 	if d == nil {
 		return ""
 	}
-	return d.Format("2006-01-02")
+	// Add one day to every date
+	adjusted := d.AddDate(0, 0, 1)
+	return adjusted.Format("2006-01-02")
 }
 
 // Auto-refresh handlers (unchanged)
@@ -455,4 +544,86 @@ func (a *App) StopAutoRefresh() {
 		a.autoRefreshTicker = nil
 		log.Printf("auto-refresh stopped")
 	}
+}
+
+// DeleteSeriesRequest represents the request payload for deleting series
+type DeleteSeriesRequest struct {
+	SeriesTitles []string `json:"seriesTitles"`
+}
+
+// HandleDeleteSeries handles the deletion of multiple series
+func (a *App) HandleDeleteSeries(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req DeleteSeriesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if len(req.SeriesTitles) == 0 {
+		http.Error(w, "No series titles provided", http.StatusBadRequest)
+		return
+	}
+
+	// Delete series from database by title
+	for _, title := range req.SeriesTitles {
+		if err := a.DB.DeleteSeriesByTitle(title); err != nil {
+			log.Printf("error deleting series %s: %v", title, err)
+			http.Error(w, fmt.Sprintf("Failed to delete series %s", title), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("deleted series %s", title)
+	}
+
+	// Update the in-memory data by reloading from database
+	if err := a.reloadDataFromDB(); err != nil {
+		log.Printf("error reloading data after deletion: %v", err)
+		// Don't return error to user since deletion succeeded
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Successfully deleted %d series", len(req.SeriesTitles))
+}
+
+// reloadDataFromDB reloads the in-memory data from the database
+func (a *App) reloadDataFromDB() error {
+	series, err := a.DB.GetAllSeries()
+	if err != nil {
+		return fmt.Errorf("failed to get series from database: %v", err)
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// Convert database series to SeriesIDs format
+	var newData []models.SeriesIDs
+	for _, s := range series {
+		audibleID := ""
+		if s.AudibleID != nil {
+			audibleID = *s.AudibleID
+		}
+		audibleURL := ""
+		if s.AudibleURL != nil {
+			audibleURL = *s.AudibleURL
+		}
+		amazonASIN := ""
+		if s.AmazonASIN != nil {
+			amazonASIN = *s.AmazonASIN
+		}
+
+		newData = append(newData, models.SeriesIDs{
+			Title:      s.Title,
+			AudibleID:  audibleID,
+			AudibleURL: audibleURL,
+			AmazonASIN: amazonASIN,
+		})
+	}
+
+	a.Data = newData
+	log.Printf("reloaded %d series from database", len(newData))
+	return nil
 }

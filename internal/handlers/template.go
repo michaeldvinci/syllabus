@@ -15,7 +15,10 @@ const IndexHTML = `
   --bg:#ffffff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--head-bg:#f9fafb;--row-hover:#f3f4f6;
   --aud:#0ea5e9;--amz:#f59e0b
 }
-[data-theme="dark"]{--bg:#2b2b2b;--text:#a9b7c6;--muted:#808080;--line:#3c3f41;--head-bg:#3c3f41;--row-hover:#3c3f41}
+[data-theme="dark"]{
+  --bg:#1a1a1a;--text:#e5e7eb;--muted:#9ca3af;--line:#374151;--head-bg:#2a2a2a;--row-hover:#374151;
+  --aud:#4a9eff;--amz:#ff9500
+}
 
 html,body{height:100%}
 body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif}
@@ -26,8 +29,12 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .top-bar-logo{display:flex;align-items:center;gap:12px}
 .top-bar-logo .logo{width:32px;height:32px;flex-shrink:0}
 .top-bar-title{font-size:24px;font-weight:600;color:var(--text)}
-.top-bar-search{flex:1;max-width:420px;margin:0 24px}
-.search-input{width:100%;padding:10px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px}
+.top-bar-search{flex:1;max-width:420px;margin:0 24px;display:flex;gap:8px;align-items:center}
+.search-input{flex:1;padding:10px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;height:40px;box-sizing:border-box}
+.add-series-btn{background:var(--bg);border:1px solid var(--line);color:var(--text);cursor:pointer;padding:10px;border-radius:8px;transition:.2s;height:40px;width:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
+.add-series-btn:hover{background:var(--row-hover);border-color:var(--text)}
+[data-theme="dark"] .add-series-btn{background:var(--bg);color:var(--text);border-color:var(--line)}
+[data-theme="dark"] .add-series-btn:hover{background:var(--row-hover);border-color:var(--text)}
 .search-input:focus{outline:none;border-color:#3182ce;box-shadow:0 0 0 3px rgba(49,130,206,.1)}
 .top-bar-right{display:flex;align-items:center;gap:16px}
 .status-indicator{display:none;width:20px;height:20px;position:relative}
@@ -40,13 +47,15 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .status-dot:nth-child(5){top:14px;left:2px;animation-delay:0.8s}
 .status-dot:nth-child(6){top:6px;left:2px;animation-delay:1.0s}
 @keyframes statusPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
-.settings-btn{background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;padding:8px;border-radius:6px;transition:.2s;background:#fff}
-.settings-btn:hover{background:#f8fafc;color:var(--text)}
-.user-box{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer}
+.settings-btn{background:var(--bg);border:1px solid var(--line);color:var(--text);cursor:pointer;padding:10px 12px;border-radius:8px;transition:.2s;height:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;min-width:40px}
+.settings-btn:hover{background:var(--row-hover);border-color:var(--text)}
+[data-theme="dark"] .settings-btn{background:var(--bg);color:var(--text)}
+[data-theme="dark"] .settings-btn:hover{background:var(--row-hover)}
+.user-box{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-weight:500;cursor:pointer;height:40px;box-sizing:border-box;display:flex;align-items:center}
 .user-dropdown{position:absolute;top:100%;right:0;margin-top:4px;background:var(--bg);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);min-width:140px;display:none;z-index:300}
 .user-dropdown-item{display:block;width:100%;padding:10px 16px;text-align:left;background:none;border:none;color:var(--text);font-size:14px;cursor:pointer;text-decoration:none}
 .user-dropdown-item:hover{background:var(--row-hover)}
-[data-theme="dark"] .user-dropdown{background:#313335;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+[data-theme="dark"] .user-dropdown{background:#2a2a2a;box-shadow:0 4px 12px rgba(0,0,0,.5);border-color:#374151}
 .user-list-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--line);border-radius:6px;margin-bottom:8px;background:var(--head-bg)}
 .user-info{flex:1}
 .user-name{font-weight:600;color:var(--text)}
@@ -56,8 +65,8 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .delete-user-btn:hover{background:#b91c1c}
 .reset-password-btn{padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px}
 .reset-password-btn:hover{background:#d97706}
-[data-theme="dark"] .user-list-item{background:#374151}
-[data-theme="dark"] .top-bar{background:#3c3f41}
+[data-theme="dark"] .user-list-item{background:#2a2a2a;border-color:#374151}
+[data-theme="dark"] .top-bar{background:#2a2a2a;border-bottom-color:#374151}
 
 /* ── layout containers ───────────────────────────────── */
 .main{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -72,17 +81,24 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 
 /* cards/tiles */
 .card{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
-[data-theme="dark"] .card{background:#313335}
+[data-theme="dark"] .card{background:#2a2a2a;border-color:#374151}
 .card-h{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--head-bg);border-radius:12px 12px 0 0;font-weight:600}
 .card-c{padding:16px}
 .tile{border:1px solid var(--line);border-radius:12px;background:var(--head-bg);padding:14px 16px}
 .tile .k{font-size:.85rem;color:var(--muted)}
-.tile .v{font-size:1.6rem;font-weight:700;line-height:1.1;white-space:nowrap}
+.tile .v{font-size:1.6rem;font-weight:700;line-height:1.1}
+.tile:first-child .v{font-size:1.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* desktop layout */
 .desktop-wrap{padding:24px;gap:16px;display:flex;flex-direction:column;min-height:0;height:100%}
-.desktop-top-row{display:grid;grid-template-columns:1fr 200px 240px;gap:16px}
+.desktop-top-row{display:grid;grid-template-columns:2fr 200px 240px;gap:16px}
 .desktop-body{display:grid;grid-template-columns:280px 1fr;gap:16px;min-height:0;flex:1}
+/* Collapsible filters: thin strip on collapse */
+.desktop-body.filters-collapsed{grid-template-columns:48px 1fr}
+.desktop-body.filters-collapsed #expandedFilter{display:none}
+.desktop-body.filters-collapsed #collapsedFilter{display:block}
+#collapsedFilter{display:none;text-align:center;padding:12px;cursor:pointer}
+#collapsedFilter svg{display:block;margin:0 auto}
 .panel{min-height:0;display:flex;flex-direction:column}
 .panel-scroll{min-height:0;flex:1;overflow:auto;padding-bottom:24px;scroll-padding-bottom:24px;margin-bottom:12px}
 
@@ -98,23 +114,27 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .table thead th.sort-desc::after{content:' ▼';color:var(--aud);font-size:10px}
 .table tbody td{padding:12px 16px;border-bottom:1px solid var(--line)}
 .zebra tbody tr:nth-child(2n){background:rgba(0,0,0,.03)}
-[data-theme="dark"] .zebra tbody tr:nth-child(2n){background:#2f3133}
+[data-theme="dark"] .zebra tbody tr:nth-child(2n){background:#222222}
 
 /* pills/badges */
 .badge{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:9999px;font-size:.78rem;font-weight:600;border:1px solid rgba(0,0,0,.06)}
 .b-aud{background:rgba(14,165,233,.12);color:#0369a1}
 .b-amz{background:rgba(245,158,11,.16);color:#92400e}
+[data-theme="dark"] .b-aud{background:rgba(74,159,255,.15);color:#4a9eff}
+[data-theme="dark"] .b-amz{background:rgba(255,149,0,.15);color:#ff9500}
 .next{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.78rem;font-weight:600}
 .next-aud{background:var(--aud);color:#fff}
 .next-amz{background:var(--amz);color:#fff}
 .next-none{background:#64748b;color:#fff}
+[data-theme="dark"] .next-none{background:#374151;color:#cbd5e1}
 .latest{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.78rem;font-weight:600;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;text-align:center}
-[data-theme="dark"] .latest{background:#374151;color:#9ca3af;border-color:#4b5563}
+[data-theme="dark"] .latest{background:#2a2a2a;color:#e5e7eb;border-color:#374151}
 .next{text-align:center}
-.next-none{background:#374151;color:#cbd5e1}
 .linkpill{display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;line-height:1;padding:.28rem .45rem;border-radius:999px;text-decoration:none;border:1px solid rgba(0,0,0,.06);min-width:1.8rem}
 .link-aud{background:rgba(14,165,233,.08);color:var(--aud)}
 .link-amz{background:rgba(245,158,11,.10);color:var(--amz)}
+[data-theme="dark"] .link-aud{background:rgba(74,159,255,.12);color:var(--aud)}
+[data-theme="dark"] .link-amz{background:rgba(255,149,0,.12);color:var(--amz)}
 
 /* Icon styles */
 .icon-headphones{
@@ -145,7 +165,7 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 /* modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:500}
 .modal-panel{background:#fff;border:1px solid var(--line);border-radius:12px;max-width:520px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-[data-theme="dark"] .modal-panel{background:#313335}
+[data-theme="dark"] .modal-panel{background:#2a2a2a;border-color:#374151}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700}
 .modal-body{padding:16px}
 .modal-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
@@ -161,7 +181,7 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .m-top{display:grid;grid-template-columns:1fr;gap:8px}
 @media (min-width: 480px){ .m-top{grid-template-columns:1fr 1fr 1fr} }
 .m-item{border:1px solid var(--line);border-radius:12px;background:#fff;padding:12px}
-[data-theme="dark"] .m-item{background:#313335}
+[data-theme="dark"] .m-item{background:#2a2a2a;border-color:#374151}
 .m-title{font-weight:700}
 .m-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.95rem;margin-top:6px;flex-wrap:wrap}
 </style>
@@ -176,6 +196,26 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
       </div>
       <div class="top-bar-search">
         <input type="text" class="search-input" placeholder="Search series..." id="searchInput">
+        <button class="add-series-btn" id="addSeriesBtn" onclick="openAddSeriesModal()" title="Add new series">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <button class="add-series-btn" id="editBtn" onclick="toggleEditMode()" title="Edit mode">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4Z"></path>
+          </svg>
+        </button>
+        <button class="add-series-btn" id="deleteBtn" onclick="deleteSelected()" title="Delete selected" style="display:none;background:#dc2626;color:white;border-color:#dc2626">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3,6 5,6 21,6"></polyline>
+            <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="top-bar-right">
@@ -189,7 +229,12 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
           <div class="status-dot"></div>
         </div>
       </div>
-      <button class="settings-btn" id="settingsBtn" onclick="openSettingsModal()" title="Settings">⚙️</button>
+      <button class="settings-btn" id="settingsBtn" onclick="openSettingsModal()" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
       <div class="user-box" id="userBox" onclick="toggleUserDropdown()">
         {{ if .Authenticated }}
           {{ if .User }}{{ .User.Username }}{{ else }}account{{ end }}
@@ -216,10 +261,10 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
       <!-- ================= DESKTOP VIEW ================= -->
       <div id="desktopView" class="desktop-wrap">
 
-        <!-- row: Soonest | Total series | With upcoming -->
+        <!-- row: Next | Total series | With upcoming -->
         <div class="desktop-top-row">
           <div class="tile" title="Next book release across all series">
-            <div class="k">Soonest release</div>
+            <div class="k">Next release</div>
             <div class="v" id="soonestTop">—</div>
           </div>
           <div class="tile" title="Total number of series being tracked">
@@ -234,16 +279,33 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 
         <!-- Two-column body -->
         <div class="desktop-body">
-          <!-- Left: compact checkbox filters -->
-          <div class="card panel">
-            <div class="card-h">Filters</div>
-            <div class="card-c panel-scroll" style="padding-top:12px">
-              <div class="checkrow"><input type="checkbox" id="fAudNext"><label for="fAudNext">Audible has <b>Next</b></label></div>
-              <div class="checkrow"><input type="checkbox" id="fAmzNext"><label for="fAmzNext">Amazon has <b>Next</b></label></div>
-              <div class="checkrow"><input type="checkbox" id="fAnyUpcoming"><label for="fAnyUpcoming">Any upcoming date</label></div>
-              <div class="checkrow"><input type="checkbox" id="fNoNext"><label for="fNoNext">No upcoming date</label></div>
-              <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
-              <button id="clearFilters" style="width:100%;padding:.6rem .8rem;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer">Clear filters</button>
+          <!-- Left: collapsible filters -->
+          <div class="card panel" id="filterPanel">
+            <!-- Expanded state -->
+            <div id="expandedFilter">
+              <div class="card-h filter-toggle" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleFilters()">
+                <span>Filters</span>
+                <div class="filter-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6,9 12,15 18,9"></polyline>
+                  </svg>
+                </div>
+              </div>
+              <div id="filterContent" class="card-c panel-scroll" style="padding-top:12px">
+                <div class="checkrow"><input type="checkbox" id="fAudNext"><label for="fAudNext">Audible has <b>Next</b></label></div>
+                <div class="checkrow"><input type="checkbox" id="fAmzNext"><label for="fAmzNext">Amazon has <b>Next</b></label></div>
+                <div class="checkrow"><input type="checkbox" id="fAnyUpcoming"><label for="fAnyUpcoming">Any upcoming date</label></div>
+                <div class="checkrow"><input type="checkbox" id="fNoNext"><label for="fNoNext">No upcoming date</label></div>
+                <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+                <button id="clearFilters" style="width:100%;padding:.6rem .8rem;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer">Clear filters</button>
+              </div>
+            </div>
+            
+            <!-- Collapsed state (hidden by default) -->
+            <div id="collapsedFilter" onclick="toggleFilters()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"></polygon>
+              </svg>
             </div>
           </div>
 
@@ -253,6 +315,9 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
               <table class="table zebra" id="seriesTable">
                 <thead>
                   <tr>
+                    <th id="selectAllTh" style="width:40px;text-align:center;display:none">
+                      <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                    </th>
                     <th class="sortable" data-sort="title" onclick="sortTable('title')">Series</th>
                     <th class="sortable" data-sort="audible" style="color:var(--aud)" onclick="sortTable('audible')">Audible</th>
                     <th class="sortable" data-sort="aud-latest" style="color:var(--aud)" onclick="sortTable('aud-latest')">Latest</th>
@@ -272,25 +337,28 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
                       data-amz-latest="{{ .AmazonLatest }}"
                       data-aud-next="{{ .AudibleNext }}"
                       data-amz-next="{{ .AmazonNext }}">
+                    <td class="selectTd" style="width:40px;text-align:center;display:none">
+                      <input type="checkbox" class="rowCheckbox" value="{{ .Title }}" onchange="updateDeleteButton()">
+                    </td>
                     <td class="text">
                       <div style="font-weight:700;color:var(--text)">{{ .Title }}</div>
                     </td>
-                    <td style="text-align:center;padding:12px 8px">
+                    <td style="text-align:left;padding:12px 8px">
                       <div style="display:inline-flex;align-items:center;gap:6px">
                         {{ if .AudibleURL }}<a class="linkpill link-aud" href="{{ .AudibleURL }}" target="_blank" rel="noopener" title="View on Audible"><span class="icon-headphones"></span></a>{{ end }}
                         <span style="color:var(--aud);font-weight:600">{{ .AudibleCount }}</span>
                       </div>
                     </td>
                     <td><span class="latest" data-latest-pill-aud>{{ if .AudibleLatest }}{{ .AudibleLatest }}{{ else }}—{{ end }}</span></td>
-                    <td><span class="next next-none" data-next-pill-aud><center>-</center></span></td>
-                    <td style="text-align:center;padding:12px 8px">
+                    <td><span class="next" data-next-pill-aud><center>-</center></span></td>
+                    <td style="text-align:left;padding:12px 8px">
                       <div style="display:inline-flex;align-items:center;gap:6px">
                         {{ if .AmazonURL }}<a class="linkpill link-amz" href="{{ .AmazonURL }}" target="_blank" rel="noopener" title="View on Amazon"><span class="icon-book"></span></a>{{ end }}
                         <span style="color:var(--amz);font-weight:600">{{ .AmazonCount }}</span>
                       </div>
                     </td>
                     <td><span class="latest" data-latest-pill-amz>{{ if .AmazonLatest }}{{ .AmazonLatest }}{{ else }}—{{ end }}</span></td>
-                    <td><span class="next next-none" data-next-pill-amz><center>-</center></span></td>
+                    <td><span class="next" data-next-pill-amz><center>-</center></span></td>
                   </tr>
                   {{ end }}
                 </tbody>
@@ -304,7 +372,7 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
       <!-- ================= MOBILE VIEW ================== -->
       <div id="mobileView" class="mobile-wrap">
         <div class="m-top">
-          <div class="tile" title="Next book release across all series"><div class="k">Soonest</div><div class="v" id="soonestMobile">—</div></div>
+          <div class="tile" title="Next book release across all series"><div class="k">Next</div><div class="v" id="soonestMobile">—</div></div>
           <div class="tile" title="Total number of series being tracked"><div class="k">Total</div><div class="v" id="tSeriesM">0</div></div>
           <div class="tile" title="Number of series that have upcoming release dates"><div class="k">With upcoming</div><div class="v" id="tUpcomingM">0</div></div>
         </div>
@@ -321,8 +389,8 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
           <div class="m-title">{{ .Title }}</div>
           <div class="m-row"><span class="icon-headphones" style="color:var(--aud)"></span>{{ .AudibleCount }} Latest <span class="latest" data-latest-pill-aud>{{ if .AudibleLatest }}{{ .AudibleLatest }}{{ else }}—{{ end }}</span></div>
           <div class="m-row"><span class="icon-book" style="color:var(--amz)"></span>{{ .AmazonCount }} Latest <span class="latest" data-latest-pill-amz>{{ if .AmazonLatest }}{{ .AmazonLatest }}{{ else }}—{{ end }}</span></div>
-          <div class="m-row">Next (Au): <span class="next next-none" data-next-pill-aud><center>-</center></span></div>
-          <div class="m-row">Next (Am): <span class="next next-none" data-next-pill-amz><center>-</center></span></div>
+          <div class="m-row">Next (Au): <span class="next" data-next-pill-aud><center>-</center></span></div>
+          <div class="m-row">Next (Am): <span class="next" data-next-pill-amz><center>-</center></span></div>
           <div class="m-row" style="gap:6px">
             {{ if .AudibleURL }}<a class="linkpill link-aud" href="{{ .AudibleURL }}" target="_blank" rel="noopener" title="View on Audible"><span class="icon-headphones"></span>{{ .AudibleCount }}</a>{{ end }}
             {{ if .AmazonURL }}<a class="linkpill link-amz" href="{{ .AmazonURL }}" target="_blank" rel="noopener" title="View on Amazon"><span class="icon-book"></span>{{ .AmazonCount }}</a>{{ end }}
@@ -339,7 +407,12 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
     <div class="modal-panel">
       <div class="modal-head">
         <div id="settingsTitle">Settings</div>
-        <button id="settingsClose" class="settings-btn" aria-label="Close settings">✕</button>
+        <button id="settingsClose" class="settings-btn" aria-label="Close settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <div class="modal-body">
         <div class="modal-row">
@@ -357,7 +430,7 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
         <div class="modal-row">
           <div>
             <div style="font-weight:600">Show days remaining</div>
-            <div style="color:var(--muted);font-size:.9rem">When on, Next shows whole-number days (e.g., "42d") and Soonest shows "in X days".</div>
+            <div style="color:var(--muted);font-size:.9rem">When on, Next shows whole-number days (e.g., "42d") and Next shows "in X days".</div>
           </div>
           <label class="switch" aria-label="Toggle days remaining">
             <input type="checkbox" id="toggleDays">
@@ -390,7 +463,7 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
             </svg>
             GitHub
           </a>
-          <div style="font-style:italic;color:var(--muted);font-size:12px">Last scrape started: {{ .LastScrape }}</div>
+          <div style="font-style:italic;color:var(--muted);font-size:12px">Last scrape started: <span id="lastScrapeTs">{{ .LastScrape }}</span></div>
         </div>
       </div>
     </div>
@@ -401,7 +474,12 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
     <div class="modal-panel" style="max-width:600px">
       <div class="modal-head">
         <div id="usersTitle">User Management</div>
-        <button id="usersClose" class="settings-btn" aria-label="Close user management">✕</button>
+        <button id="usersClose" class="settings-btn" aria-label="Close user management">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <div class="modal-body">
         <div class="modal-row">
@@ -426,7 +504,12 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
     <div class="modal-panel">
       <div class="modal-head">
         <div id="createUserTitle">Create New User</div>
-        <button id="createUserClose" class="settings-btn" aria-label="Close create user">✕</button>
+        <button id="createUserClose" class="settings-btn" aria-label="Close create user">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <div class="modal-body">
         <div style="margin-bottom:16px">
@@ -457,7 +540,12 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
     <div class="modal-panel">
       <div class="modal-head">
         <div id="resetPasswordTitle">Reset Password</div>
-        <button id="resetPasswordClose" class="settings-btn" aria-label="Close reset password">✕</button>
+        <button id="resetPasswordClose" class="settings-btn" aria-label="Close reset password">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <div class="modal-body">
         <div style="margin-bottom:16px">
@@ -474,6 +562,39 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button id="cancelResetPassword" style="padding:8px 16px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;cursor:pointer">Cancel</button>
           <button id="confirmResetPassword" style="padding:8px 16px;background:#f59e0b;color:white;border:none;border-radius:6px;cursor:pointer">Reset Password</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Series Modal -->
+  <div id="addSeriesModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="addSeriesTitle">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <div id="addSeriesTitle">Add New Series</div>
+        <button id="addSeriesClose" class="settings-btn" aria-label="Close add series">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:4px;font-weight:600">Series Title</label>
+          <input type="text" id="addSeriesTitleInput" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--text)" placeholder="Enter series title">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:4px;font-weight:600">Audible URL</label>
+          <input type="url" id="addSeriesAudible" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--text)" placeholder="https://www.audible.com/series/Bobiverse-Audiobooks/B01M1RDL6W">
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:4px;font-weight:600">Amazon URL</label>
+          <input type="url" id="addSeriesAmazon" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--text)" placeholder="https://www.amazon.com/dp/B0753LBFQ7">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button id="cancelAddSeries" style="padding:8px 16px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;cursor:pointer">Cancel</button>
+          <button id="confirmAddSeries" style="padding:8px 16px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer">Add Series</button>
         </div>
       </div>
     </div>
@@ -509,12 +630,18 @@ let SHOW_DAYS = false;
 try { SHOW_DAYS = localStorage.getItem('syll_show_days') === '1'; } catch(e){}
 
 /* ── UI helpers ─────────────────────────────────── */
+function setLastScrape(ts){
+  var el = document.getElementById('lastScrapeTs');
+  if(el){ el.textContent = ts; }
+}
 function setPill(pill, date){
   if(!pill) return;
+  const isAudible = pill.hasAttribute('data-next-pill-aud');
   const d = parseAnyDate(date);
   if(!d){
     pill.innerHTML = '<center>-</center>';
-    pill.className = 'next next-none';
+    pill.className = 'next ' + (isAudible ? 'next-aud' : 'next-amz');
+    pill.title = '—';
     return;
   }
   const left = daysUntil(d);
@@ -524,13 +651,7 @@ function setPill(pill, date){
   } else {
     pill.textContent = fmt(d);
   }
-  // Color based on provider (Audible vs Amazon)
-  if (left == null) {
-    pill.className = 'next next-none';
-  } else {
-    const isAudible = pill.hasAttribute('data-next-pill-aud');
-    pill.className = 'next ' + (isAudible ? 'next-aud' : 'next-amz');
-  }
+  pill.className = 'next ' + (isAudible ? 'next-aud' : 'next-amz');
 }
 
 function setLatestPill(pill, date){
@@ -554,12 +675,15 @@ function computeTilesAndDecorate(){
   const mRows = Array.from(document.querySelectorAll('#mobileView .m-item'));
   const all = dRows.length ? dRows : mRows;
 
-  let total = all.length, upcoming = 0, soonest = null;
+  let total = all.length, upcoming = 0, soonest = null, soonestInfo = null;
 
-  const consider = (date) => {
+  const consider = (date, provider, title) => {
     const d = parseAnyDate(date);
     if(!d) return;
-    if(!soonest || d < soonest) soonest = d;
+    if(!soonest || d < soonest) {
+      soonest = d;
+      soonestInfo = { date: d, provider, title };
+    }
   };
 
   const decorate = (el) => {
@@ -567,6 +691,7 @@ function computeTilesAndDecorate(){
     const amzNext = el.dataset.amzNext;
     const audLatest = el.dataset.audLatest;
     const amzLatest = el.dataset.amzLatest;
+    const title = el.dataset.title;
     
     setPill(el.querySelector('[data-next-pill-aud]'), audNext);
     setPill(el.querySelector('[data-next-pill-amz]'), amzNext);
@@ -574,7 +699,8 @@ function computeTilesAndDecorate(){
     setLatestPill(el.querySelector('[data-latest-pill-amz]'), amzLatest);
 
     if(parseAnyDate(audNext) || parseAnyDate(amzNext)) upcoming++;
-    consider(audNext); consider(amzNext);
+    consider(audNext, 'Audible', title);
+    consider(amzNext, 'Amazon', title);
   };
   all.forEach(decorate);
 
@@ -582,9 +708,13 @@ function computeTilesAndDecorate(){
   const tUpcoming = document.querySelector('#tUpcoming'); if(tUpcoming) tUpcoming.textContent = upcoming;
   const soonTop = document.querySelector('#soonestTop');
   if(soonTop){
-    if(soonest){
-      const left = daysUntil(soonest);
-      soonTop.textContent = SHOW_DAYS && left!=null ? ('in '+left+' days') : fmt(soonest);
+    if(soonestInfo){
+      const dateStr = soonestInfo.date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      soonTop.textContent = dateStr + ' | ' + soonestInfo.provider + ' | ' + soonestInfo.title;
     }else{
       soonTop.textContent = '—';
     }
@@ -594,9 +724,13 @@ function computeTilesAndDecorate(){
   const tUpcomingM = document.querySelector('#tUpcomingM'); if(tUpcomingM) tUpcomingM.textContent = upcoming;
   const soonM = document.querySelector('#soonestMobile');
   if(soonM){
-    if(soonest){
-      const left = daysUntil(soonest);
-      soonM.textContent = SHOW_DAYS && left!=null ? ('in '+left+' days') : fmt(soonest);
+    if(soonestInfo){
+      const dateStr = soonestInfo.date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      soonM.textContent = dateStr + ' | ' + soonestInfo.provider + ' | ' + soonestInfo.title;
     } else {
       soonM.textContent = '—';
     }
@@ -744,7 +878,12 @@ function wireSettings(){
     forceScrapeBtn.addEventListener('click', ()=>{
       forceScrapeBtn.disabled = true;
       forceScrapeBtn.textContent = 'Scraping...';
-      
+      // update visible + persisted timestamp immediately on user-initiated scrape
+      try {
+        var now = new Date().toLocaleString();
+        setLastScrape(now);
+        try { localStorage.setItem('syll_last_scrape', now); } catch(e){}
+      } catch(e){}
       fetch('/refresh', {method: 'POST'})
         .then(response => {
           if(response.ok){
@@ -796,6 +935,23 @@ function logout(){
     .catch(err=>console.error('Logout failed:', err));
 }
 window.logout = logout;
+
+/* ── filters toggle ───────────────────────────── */
+function toggleFilters(){
+  const body = document.querySelector('.desktop-body');
+  const expandedFilter = document.getElementById('expandedFilter');
+  const collapsedFilter = document.getElementById('collapsedFilter');
+  if(!body || !expandedFilter || !collapsedFilter) return;
+  const nowCollapsed = !body.classList.contains('filters-collapsed');
+  if(nowCollapsed){
+    body.classList.add('filters-collapsed');
+    try{ localStorage.setItem('filters_collapsed','1'); }catch(e){}
+  }else{
+    body.classList.remove('filters-collapsed');
+    try{ localStorage.setItem('filters_collapsed','0'); }catch(e){}
+  }
+}
+window.toggleFilters = toggleFilters;
 
 /* ── user management ───────────────────────────── */
 function openUsersModal(){
@@ -1096,6 +1252,87 @@ function sortTable(column){
 }
 window.sortTable = sortTable;
 
+/* ── add series ──────────────────────────────────── */
+function openAddSeriesModal(){
+  const overlay = document.getElementById('addSeriesModal');
+  if(!overlay) return;
+  overlay.style.display = 'flex';
+  
+  // Clear form fields
+  document.getElementById('addSeriesTitleInput').value = '';
+  document.getElementById('addSeriesAudible').value = '';
+  document.getElementById('addSeriesAmazon').value = '';
+  
+  // Wire up close and cancel buttons
+  const close = document.getElementById('addSeriesClose');
+  const cancel = document.getElementById('cancelAddSeries');
+  const confirm = document.getElementById('confirmAddSeries');
+  
+  function closeAddSeriesModal(){
+    overlay.style.display = 'none';
+  }
+  
+  const onKey = (e) => { if(e.key === 'Escape') closeAddSeriesModal(); };
+  document.addEventListener('keydown', onKey);
+  
+  // Remove existing listeners
+  close?.replaceWith(close.cloneNode(true));
+  cancel?.replaceWith(cancel.cloneNode(true));
+  confirm?.replaceWith(confirm.cloneNode(true));
+  
+  // Add new listeners
+  document.getElementById('addSeriesClose')?.addEventListener('click', closeAddSeriesModal);
+  document.getElementById('cancelAddSeries')?.addEventListener('click', closeAddSeriesModal);
+  
+  document.getElementById('confirmAddSeries')?.addEventListener('click', ()=>{
+    const title = document.getElementById('addSeriesTitleInput').value.trim();
+    const audible = document.getElementById('addSeriesAudible').value.trim();
+    const amazon = document.getElementById('addSeriesAmazon').value.trim();
+    
+    if(!title){
+      alert('Series title is required.');
+      return;
+    }
+    
+    if(!audible && !amazon){
+      alert('At least one URL (Audible or Amazon) is required.');
+      return;
+    }
+    
+    // Disable button during submission
+    const btn = document.getElementById('confirmAddSeries');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    
+    fetch('/api/add-series', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, audible, amazon })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if(data.success){
+        alert('Series "' + title + '" added successfully! Scraping will begin shortly.');
+        closeAddSeriesModal();
+        // Reload the page to show the new series
+        window.location.reload();
+      } else {
+        alert('Failed to add series: ' + (data.message || 'Unknown error'));
+      }
+    })
+    .catch(err => {
+      console.error('Add series failed:', err);
+      alert('Failed to add series. Please check the URLs and try again.');
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = 'Add Series';
+      document.removeEventListener('keydown', onKey);
+    });
+  }, { once: true });
+}
+window.openAddSeriesModal = openAddSeriesModal;
+
 /* ── ical export ───────────────────────────────── */
 function wireIcalExport(){
   const downloadBtn = document.getElementById('icalExportBtn');
@@ -1141,6 +1378,14 @@ function checkBackgroundTasks(){
   fetch('/api/scrape-status')
     .then(response => response.json())
     .then(data => {
+      if(data.lastStarted){
+        try {
+          var t = new Date(data.lastStarted);
+          var ts = isNaN(t) ? data.lastStarted : t.toLocaleString();
+          setLastScrape(ts);
+          try { localStorage.setItem('syll_last_scrape', ts); } catch(e){}
+        } catch(e){ setLastScrape(data.lastStarted); }
+      }
       if(data.activeJobs > 0){
         showStatusIndicator();
         if(POLLING_ACTIVE){ // Only schedule next check if still active
@@ -1161,7 +1406,33 @@ function checkBackgroundTasks(){
 function initDashboard(){
   // Apply saved theme on load
   applyTheme(CURRENT_THEME);
-  
+  // Initialize Last Scrape from localStorage, then ask server
+  try {
+    var cached = localStorage.getItem('syll_last_scrape');
+    if(cached){ setLastScrape(cached); }
+  } catch(e){}
+
+  fetch('/api/scrape-status')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(data && data.lastStarted){
+        try {
+          var t = new Date(data.lastStarted);
+          var ts = isNaN(t) ? data.lastStarted : t.toLocaleString();
+          setLastScrape(ts);
+          try { localStorage.setItem('syll_last_scrape', ts); } catch(e){}
+        } catch(e){ setLastScrape(data.lastStarted); }
+      }
+    })
+    .catch(function(){});
+
+  // Restore filters collapsed state
+  try{
+    if(localStorage.getItem('filters_collapsed') === '1'){
+      const body = document.querySelector('.desktop-body');
+      if(body) body.classList.add('filters-collapsed');
+    }
+  }catch(e){}
   wireFilters();
   wireSearch();
   wireSettings();
@@ -1179,6 +1450,98 @@ document.addEventListener('DOMContentLoaded', initDashboard);
 window.addEventListener('beforeunload', ()=>{
   stopPolling();
 });
+
+// Edit mode functionality
+let editModeActive = false;
+
+function toggleEditMode() {
+  editModeActive = !editModeActive;
+  
+  const editBtn = document.getElementById('editBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
+  const selectAllTh = document.getElementById('selectAllTh');
+  const selectTds = document.querySelectorAll('.selectTd');
+  
+  if (editModeActive) {
+    // Enter edit mode
+    editBtn.style.background = '#10b981';
+    editBtn.style.color = 'white';
+    editBtn.style.borderColor = '#10b981';
+    deleteBtn.style.display = 'flex';
+    selectAllTh.style.display = 'table-cell';
+    selectTds.forEach(td => td.style.display = 'table-cell');
+  } else {
+    // Exit edit mode
+    editBtn.style.background = '';
+    editBtn.style.color = '';
+    editBtn.style.borderColor = '';
+    deleteBtn.style.display = 'none';
+    selectAllTh.style.display = 'none';
+    selectTds.forEach(td => td.style.display = 'none');
+    
+    // Clear all selections
+    document.getElementById('selectAll').checked = false;
+    document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = false);
+  }
+}
+
+function toggleSelectAll(selectAllCheckbox) {
+  const checkboxes = document.querySelectorAll('.rowCheckbox');
+  checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+  updateDeleteButton();
+}
+
+function updateDeleteButton() {
+  const deleteBtn = document.getElementById('deleteBtn');
+  const checkedBoxes = document.querySelectorAll('.rowCheckbox:checked');
+  
+  if (checkedBoxes.length > 0) {
+    deleteBtn.style.opacity = '1';
+    deleteBtn.disabled = false;
+  } else {
+    deleteBtn.style.opacity = '0.5';
+    deleteBtn.disabled = true;
+  }
+}
+
+function deleteSelected() {
+  const checkedBoxes = document.querySelectorAll('.rowCheckbox:checked');
+  if (checkedBoxes.length === 0) {
+    alert('No series selected for deletion.');
+    return;
+  }
+  
+  const seriesTitles = Array.from(checkedBoxes).map(cb => cb.value);
+  const count = seriesTitles.length;
+  
+  if (!confirm('Are you sure you want to delete ' + count + ' series? This action cannot be undone.')) {
+    return;
+  }
+  
+  // Send delete request
+  fetch('/api/delete-series', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ seriesTitles: seriesTitles })
+  })
+  .then(response => {
+    if (response.ok) {
+      // Refresh the page to show updated data
+      window.location.reload();
+    } else {
+      response.text().then(text => {
+        alert('Failed to delete series: ' + text);
+      });
+    }
+  })
+  .catch(error => {
+    console.error('Error deleting series:', error);
+    alert('Error deleting series: ' + error.message);
+  });
+}
+
 </script>
 </body>
 </html>

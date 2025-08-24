@@ -142,6 +142,8 @@ func main() {
 	http.HandleFunc("/calendar.ics", authMiddleware.RequireAuth(app.HandleICal))
 	http.HandleFunc("/refresh", authMiddleware.RequireAuth(app.HandleRefresh))
 	http.HandleFunc("/api/auto-refresh", authMiddleware.RequireAuth(app.HandleAutoRefresh))
+	http.HandleFunc("/api/add-series", authMiddleware.RequireAuth(app.HandleAddSeries))
+	http.HandleFunc("/api/delete-series", authMiddleware.RequireAuth(app.HandleDeleteSeries))
 	
 	// Serve static files (favicon, logo) - check for local vs docker paths
 	staticDir := "./app/res/"
