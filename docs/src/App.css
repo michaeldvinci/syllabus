@@ -1,0 +1,94 @@
+@import 'tailwindcss';
+
+/* Custom documentation styles */
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1 {
+  @apply text-3xl font-bold text-gray-900 mb-6;
+}
+
+.prose h2 {
+  @apply text-2xl font-semibold text-gray-800 mb-4 mt-8;
+}
+
+.prose h3 {
+  @apply text-xl font-medium text-gray-800 mb-3 mt-6;
+}
+
+.prose p {
+  @apply text-gray-600 mb-4 leading-relaxed;
+}
+
+.prose ul {
+  @apply list-disc list-inside mb-4 text-gray-600;
+}
+
+.prose ol {
+  @apply list-decimal list-inside mb-4 text-gray-600;
+}
+
+.prose li {
+  @apply mb-2;
+}
+
+.prose code {
+  @apply bg-gray-100 text-gray-800 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+.prose pre {
+  @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.prose pre code {
+  @apply bg-transparent text-gray-100 p-0;
+}
+
+.prose a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4;
+}
+
+.prose table {
+  @apply min-w-full divide-y divide-gray-200 mb-4;
+}
+
+.prose th {
+  @apply px-4 py-2 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.prose td {
+  @apply px-4 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-200;
+}
+
+.warning-box {
+  @apply bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6;
+}
+
+.warning-box h4 {
+  @apply text-yellow-800 font-semibold mb-2;
+}
+
+.warning-box p {
+  @apply text-yellow-700 mb-0;
+}
+
+.feature-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6 mb-8;
+}
+
+.feature-card {
+  @apply bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow;
+}
+
+.feature-card h3 {
+  @apply text-lg font-semibold text-gray-900 mb-2 mt-0;
+}
+
+.feature-card p {
+  @apply text-gray-600 text-sm mb-0;
+}
