@@ -13,9 +13,9 @@ A Go web application that tracks audiobook series release dates by scraping Audi
 - **No Account Required**: Does not access or require user accounts on either platform
 
 **Performance Expectations:**
-- **Initial Setup**: First scrape may take 10-30 minutes depending on series count
-- **Background Updates**: Automatic refreshes are optimized and much faster (2-5 minutes)
-- **Rate Limiting**: Intentional delays prevent overwhelming provider servers
+- **Initial Setup**: First scrape may take 30-90 seconds, depending on series count
+- **Background Updates**: Automatic refreshes are optimized and much faster.
+- **Rate Limiting**: Intentional delays prevent overwhelming provider servers.
 
 **Terms of Service Considerations:**
 Users should review [Audible's Terms of Use](https://www.audible.com/conditions-of-use) and [Amazon's Conditions of Use](https://www.amazon.com/gp/help/customer/display.html?nodeId=508088) to ensure compliance with their personal use case. This tool is designed for personal tracking and does not violate automated access restrictions when used responsibly.
@@ -28,8 +28,11 @@ I call it `syllabus` because it's a list of things to read.
 
 Perfect for homelab deployment with Docker Compose for automated audiobook series tracking. 
 
-### Desktop
-<img alt="syllabus-desktop" src="res/syllabus-main.png" height="600" width="900">
+### Unified View
+<img alt="syllabus-unified" src="res/syllabus-unified.png" height="600" width="900">
+
+### Tabbed View
+<img alt="syllabus-tabbed" src="res/syllabus-tabbed.png" height="600" width="900">
 
 ### Search
 <img alt="syllabus-desktop" src="res/syllabus-search.png" height="600" width="900">
