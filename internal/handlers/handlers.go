@@ -58,6 +58,7 @@ type Page struct {
 	User          *auth.User
 	Authenticated bool
 	LastScrape    string
+	MainView      string
 }
 
 // HandleIndex serves the main HTML page
@@ -127,6 +128,7 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 		User:          user,
 		Authenticated: authenticated,
 		LastScrape:    lastScrapeStr,
+		MainView:      a.Settings.MainView,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

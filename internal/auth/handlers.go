@@ -404,8 +404,8 @@ const LoginHTML = `
 }
 
 [data-theme="dark"] {
-  --bg: #1f2937;
-  --text: #f9fafb;
+  --bg: #1a1a1a;
+  --text: #e5e7eb;
   --muted: #9ca3af;
   --line: #374151;
   --primary: #3b82f6;
@@ -417,7 +417,7 @@ const LoginHTML = `
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   background: var(--bg);
@@ -426,16 +426,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .login-container {
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 0.5rem;
+  border-radius: 12px;
   padding: 2rem;
   width: 100%;
   max-width: 400px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .login-container {
+  background: #2a2a2a;
+  border-color: #374151;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .logo {
@@ -509,9 +516,57 @@ input[type="password"]:focus {
   color: var(--muted);
   font-size: 0.875rem;
 }
+
+.theme-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.theme-toggle:hover {
+  background: var(--line);
+}
+
+.theme-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke: var(--text);
+  fill: none;
+  stroke-width: 2;
+}
+
 </style>
 </head>
 <body>
+  <!-- Theme toggle button -->
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+    <svg class="theme-icon" id="sunIcon" style="display: none;">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+    <svg class="theme-icon" id="moonIcon">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </button>
+  
   <div class="login-container">
     <div class="logo">
       <img src="/static/syllabus_logo.png" alt="syllabus Logo" style="height: 3rem; width: auto; margin-bottom: 0.5rem;">
@@ -532,6 +587,51 @@ input[type="password"]:focus {
       <button type="submit" class="btn">Sign In</button>
       
       <script>
+        // Theme management
+        let currentTheme = 'light';
+
+        function applyTheme(theme) {
+          currentTheme = theme;
+          document.documentElement.setAttribute('data-theme', theme);
+          
+          const sunIcon = document.getElementById('sunIcon');
+          const moonIcon = document.getElementById('moonIcon');
+          
+          if (theme === 'dark') {
+            sunIcon.style.display = 'block';
+            moonIcon.style.display = 'none';
+          } else {
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+          }
+          
+          // Save to localStorage to sync with main app
+          try {
+            localStorage.setItem('syll_theme', theme);
+          } catch (e) {
+            console.warn('Could not save theme preference:', e);
+          }
+        }
+
+        function toggleTheme() {
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          applyTheme(newTheme);
+        }
+
+        // Initialize theme from localStorage (sync with main app)
+        function initTheme() {
+          let savedTheme = 'light';
+          try {
+            savedTheme = localStorage.getItem('syll_theme') || 'light';
+          } catch (e) {
+            console.warn('Could not load theme preference:', e);
+          }
+          applyTheme(savedTheme);
+        }
+
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', initTheme);
+
         // Check for error in URL params
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('error') === 'invalid') {

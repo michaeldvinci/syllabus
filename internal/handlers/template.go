@@ -103,7 +103,7 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .panel-scroll{min-height:0;flex:1;overflow:auto;padding-bottom:24px;scroll-padding-bottom:24px;margin-bottom:12px}
 
 /* table */
-.table{width:100%;border-collapse:separate;border-spacing:0;position:relative}
+.table{width:100%;border-collapse:separate;border-spacing:0;position:relative;table-layout:fixed}
 .table thead{position:sticky;top:0;z-index:10}
 .table thead th{background:var(--head-bg);border-bottom:1px solid var(--line);text-align:left;font-weight:600;padding:14px 16px;cursor:pointer;user-select:none;position:relative}
 .table thead th:first-child{border-top-left-radius:12px}
@@ -184,6 +184,46 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 [data-theme="dark"] .m-item{background:#2a2a2a;border-color:#374151}
 .m-title{font-weight:700}
 .m-row{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.95rem;margin-top:6px;flex-wrap:wrap}
+
+/* Tabbed view styles */
+.tab-btn{flex:1;padding:12px 16px;background:none;border:none;color:var(--muted);cursor:pointer;font-weight:600;border-radius:12px 12px 0 0;transition:.2s}
+.tab-btn.active{color:var(--text);background:var(--bg);border-bottom:1px solid var(--bg)}
+.tab-btn:hover{color:var(--text);background:var(--row-hover)}
+.unified-content{display:none !important}
+.separated-content{width:100%;overflow-x:auto}
+.separated-content .table{min-width:100%;width:100%}
+.unified-headers{display:none !important;width:100%;background:var(--head-bg);border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0}
+.unified-table{width:100%;border-collapse:separate;border-spacing:0;position:relative;table-layout:fixed}
+.unified-table thead{position:sticky;top:0;z-index:10}
+.unified-table thead th{background:var(--head-bg);border-bottom:1px solid var(--line);text-align:left;font-weight:600;padding:14px 16px;cursor:pointer;user-select:none;position:relative}
+.unified-table thead th:first-child{border-top-left-radius:12px}
+.unified-table thead th:last-child{border-top-right-radius:12px}
+.unified-table thead th:hover{background:var(--row-hover)}
+.unified-table tbody tr{transition:.2s}
+.unified-table tbody tr:hover{background:var(--row-hover)}
+.unified-table tbody td{padding:12px 16px;border-bottom:1px solid var(--line)}
+/* Tabbed view (unified-table) - fixed column widths with comfortable padding */
+.unified-table th:nth-child(1){width:60px} /* Checkbox (40px * 1.5) */
+.unified-table th:nth-child(2){width:auto} /* Series title - takes remaining space */
+.unified-table th:nth-child(3){width:120px;text-align:center} /* Count (80px * 1.5) */
+.unified-table th:nth-child(4){width:300px;text-align:center} /* Latest (200px * 1.5) */
+.unified-table th:nth-child(5){width:300px;text-align:center} /* Next (200px * 1.5) */
+.unified-table td:nth-child(3), .unified-table td:nth-child(4), .unified-table td:nth-child(5){text-align:center}
+
+/* Main table (unified/separated view) - proportional column widths */
+.table th:nth-child(1){width:40px} /* Checkbox */
+.table th:nth-child(2){width:30%} /* Series name */
+.table th:nth-child(3){width:8%;text-align:center} /* Audible count */
+.table th:nth-child(4){width:15%;text-align:center} /* Audible latest */
+.table th:nth-child(5){width:15%;text-align:center} /* Audible next */
+.table th:nth-child(6){width:8%;text-align:center} /* Amazon count */
+.table th:nth-child(7){width:15%;text-align:center} /* Amazon latest */
+.table th:nth-child(8){width:15%;text-align:center} /* Amazon next */
+.table td:nth-child(3), .table td:nth-child(4), .table td:nth-child(5),
+.table td:nth-child(6), .table td:nth-child(7), .table td:nth-child(8){text-align:center}
+
+.separated-headers{width:100%}
+.separated-headers.hidden{display:none}
 </style>
 </head>
 <body>
@@ -311,22 +351,36 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 
           <!-- Right: List -->
           <div class="card panel">
+            <!-- Tabbed view headers (hidden by default) -->
+            <div class="unified-headers" id="unifiedHeaders">
+              <button class="tab-btn active" id="audibleTab" onclick="switchTab('audible')">
+                <span class="icon-headphones" style="color:var(--aud)"></span>
+                Audible
+              </button>
+              <button class="tab-btn" id="amazonTab" onclick="switchTab('amazon')">
+                <span class="icon-book" style="color:var(--amz)"></span>
+                Amazon
+              </button>
+            </div>
+            
             <div class="panel-scroll" style="padding:0;margin:0">
-              <table class="table zebra" id="seriesTable">
-                <thead>
-                  <tr>
-                    <th id="selectAllTh" style="width:40px;text-align:center;display:none">
-                      <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
-                    </th>
-                    <th class="sortable" data-sort="title" onclick="sortTable('title')">Series</th>
-                    <th class="sortable" data-sort="audible" style="color:var(--aud)" onclick="sortTable('audible')">Audible</th>
-                    <th class="sortable" data-sort="aud-latest" style="color:var(--aud)" onclick="sortTable('aud-latest')">Latest</th>
-                    <th class="sortable" data-sort="aud-next" style="color:var(--aud)" onclick="sortTable('aud-next')">Next</th>
-                    <th class="sortable" data-sort="amazon" style="color:var(--amz)" onclick="sortTable('amazon')">Amazon</th>
-                    <th class="sortable" data-sort="amz-latest" style="color:var(--amz)" onclick="sortTable('amz-latest')">Latest</th>
-                    <th class="sortable" data-sort="amz-next" style="color:var(--amz)" onclick="sortTable('amz-next')">Next</th>
-                  </tr>
-                </thead>
+              <!-- Separated view (default) -->
+              <div class="separated-content" id="separatedContent">
+                <table class="table zebra" id="seriesTable">
+                  <thead class="separated-headers" id="separatedHeaders">
+                    <tr>
+                      <th id="selectAllTh" style="width:40px;text-align:center;display:none">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                      </th>
+                      <th class="sortable" data-sort="title" onclick="sortTable('title')">Series</th>
+                      <th class="sortable" data-sort="audible" style="color:var(--aud)" onclick="sortTable('audible')">Audible</th>
+                      <th class="sortable" data-sort="aud-latest" style="color:var(--aud)" onclick="sortTable('aud-latest')">Latest</th>
+                      <th class="sortable" data-sort="aud-next" style="color:var(--aud)" onclick="sortTable('aud-next')">Next</th>
+                      <th class="sortable" data-sort="amazon" style="color:var(--amz)" onclick="sortTable('amazon')">Amazon</th>
+                      <th class="sortable" data-sort="amz-latest" style="color:var(--amz)" onclick="sortTable('amz-latest')">Latest</th>
+                      <th class="sortable" data-sort="amz-next" style="color:var(--amz)" onclick="sortTable('amz-next')">Next</th>
+                    </tr>
+                  </thead>
                 <tbody id="seriesTbody">
                   {{ range .Rows }}
                   <tr class="row"
@@ -362,7 +416,89 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
                   </tr>
                   {{ end }}
                 </tbody>
-              </table>
+                </table>
+              </div>
+
+              <!-- Unified view (hidden by default) -->
+              <div class="unified-content" id="audibleContent">
+                <table class="unified-table zebra">
+                  <thead>
+                    <tr>
+                      <th id="unifiedSelectAllTh" style="width:40px;text-align:center;display:none">
+                        <input type="checkbox" id="unifiedSelectAll" onchange="toggleSelectAll(this)">
+                      </th>
+                      <th class="sortable" data-sort="title" onclick="sortTable('title')">Series</th>
+                      <th class="sortable" data-sort="audible" style="color:var(--aud)" onclick="sortTable('audible')">Count</th>
+                      <th class="sortable" data-sort="aud-latest" style="color:var(--aud)" onclick="sortTable('aud-latest')">Latest</th>
+                      <th class="sortable" data-sort="aud-next" style="color:var(--aud)" onclick="sortTable('aud-next')">Next</th>
+                    </tr>
+                  </thead>
+                  <tbody id="audibleTbody">
+                    {{ range .Rows }}
+                    <tr class="row audible-row"
+                        data-title="{{ .Title }}"
+                        data-aud-count="{{ .AudibleCount }}"
+                        data-aud-latest="{{ .AudibleLatest }}"
+                        data-aud-next="{{ .AudibleNext }}">
+                      <td class="selectTd" style="width:40px;text-align:center;display:none">
+                        <input type="checkbox" class="rowCheckbox" value="{{ .Title }}" onchange="updateDeleteButton()">
+                      </td>
+                      <td class="text">
+                        <div style="font-weight:700;color:var(--text)">{{ .Title }}</div>
+                      </td>
+                      <td style="text-align:left;padding:12px 8px">
+                        <div style="display:inline-flex;align-items:center;gap:6px">
+                          {{ if .AudibleURL }}<a class="linkpill link-aud" href="{{ .AudibleURL }}" target="_blank" rel="noopener" title="View on Audible"><span class="icon-headphones"></span></a>{{ end }}
+                          <span style="color:var(--aud);font-weight:600">{{ .AudibleCount }}</span>
+                        </div>
+                      </td>
+                      <td><span class="latest" data-latest-pill-aud>{{ if .AudibleLatest }}{{ .AudibleLatest }}{{ else }}—{{ end }}</span></td>
+                      <td><span class="next" data-next-pill-aud><center>-</center></span></td>
+                    </tr>
+                    {{ end }}
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="unified-content" id="amazonContent">
+                <table class="unified-table zebra">
+                  <thead>
+                    <tr>
+                      <th id="unifiedSelectAllTh2" style="width:40px;text-align:center;display:none">
+                        <input type="checkbox" id="unifiedSelectAll2" onchange="toggleSelectAll(this)">
+                      </th>
+                      <th class="sortable" data-sort="title" onclick="sortTable('title')">Series</th>
+                      <th class="sortable" data-sort="amazon" style="color:var(--amz)" onclick="sortTable('amazon')">Count</th>
+                      <th class="sortable" data-sort="amz-latest" style="color:var(--amz)" onclick="sortTable('amz-latest')">Latest</th>
+                      <th class="sortable" data-sort="amz-next" style="color:var(--amz)" onclick="sortTable('amz-next')">Next</th>
+                    </tr>
+                  </thead>
+                  <tbody id="amazonTbody">
+                    {{ range .Rows }}
+                    <tr class="row amazon-row"
+                        data-title="{{ .Title }}"
+                        data-amz-count="{{ .AmazonCount }}"
+                        data-amz-latest="{{ .AmazonLatest }}"
+                        data-amz-next="{{ .AmazonNext }}">
+                      <td class="selectTd" style="width:40px;text-align:center;display:none">
+                        <input type="checkbox" class="rowCheckbox" value="{{ .Title }}" onchange="updateDeleteButton()">
+                      </td>
+                      <td class="text">
+                        <div style="font-weight:700;color:var(--text)">{{ .Title }}</div>
+                      </td>
+                      <td style="text-align:left;padding:12px 8px">
+                        <div style="display:inline-flex;align-items:center;gap:6px">
+                          {{ if .AmazonURL }}<a class="linkpill link-amz" href="{{ .AmazonURL }}" target="_blank" rel="noopener" title="View on Amazon"><span class="icon-book"></span></a>{{ end }}
+                          <span style="color:var(--amz);font-weight:600">{{ .AmazonCount }}</span>
+                        </div>
+                      </td>
+                      <td><span class="latest" data-latest-pill-amz>{{ if .AmazonLatest }}{{ .AmazonLatest }}{{ else }}—{{ end }}</span></td>
+                      <td><span class="next" data-next-pill-amz><center>-</center></span></td>
+                    </tr>
+                    {{ end }}
+                  </tbody>
+                </table>
+              </div>
               <div style="height:24px"></div>
             </div>
           </div>
@@ -417,8 +553,8 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
       <div class="modal-body">
         <div class="modal-row">
           <div>
-            <div style="font-weight:600">Theme</div>
-            <div style="color:var(--muted);font-size:.9rem">Switch between light and dark mode.</div>
+            <div style="font-weight:600">Dark Mode</div>
+            <div style="color:var(--muted);font-size:.9rem">Switch on for dark mode.</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             <label class="switch" aria-label="Toggle dark mode">
@@ -434,6 +570,16 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
           </div>
           <label class="switch" aria-label="Toggle days remaining">
             <input type="checkbox" id="toggleDays">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="modal-row">
+          <div>
+            <div style="font-weight:600">Unified View</div>
+            <div style="color:var(--muted);font-size:.9rem">When on, shows Audible and Amazon in separate columns. When off, shows them in tabs.</div>
+          </div>
+          <label class="switch" aria-label="Toggle unified view">
+            <input type="checkbox" id="toggleUnifiedView">
             <span class="slider"></span>
           </label>
         </div>
@@ -671,9 +817,13 @@ function setLatestPill(pill, date){
 }
 
 function computeTilesAndDecorate(){
+  // Use only main table for counting to avoid duplicates
   const dRows = Array.from(document.querySelectorAll('#seriesTbody tr'));
   const mRows = Array.from(document.querySelectorAll('#mobileView .m-item'));
   const all = dRows.length ? dRows : mRows;
+  
+  // Get all rows for decoration (including tabbed views)
+  const allRowsForDecoration = Array.from(document.querySelectorAll('#seriesTbody tr, #audibleTbody tr, #amazonTbody tr'));
 
   let total = all.length, upcoming = 0, soonest = null, soonestInfo = null;
 
@@ -702,7 +852,22 @@ function computeTilesAndDecorate(){
     consider(audNext, 'Audible', title);
     consider(amzNext, 'Amazon', title);
   };
+  
+  // Count and analyze using only main table rows (no duplicates)
   all.forEach(decorate);
+  
+  // Decorate all table rows (including tabbed views) for visual updates
+  allRowsForDecoration.forEach(el => {
+    const audNext = el.dataset.audNext;
+    const amzNext = el.dataset.amzNext;
+    const audLatest = el.dataset.audLatest;
+    const amzLatest = el.dataset.amzLatest;
+    
+    setPill(el.querySelector('[data-next-pill-aud]'), audNext);
+    setPill(el.querySelector('[data-next-pill-amz]'), amzNext);
+    setLatestPill(el.querySelector('[data-latest-pill-aud]'), audLatest);
+    setLatestPill(el.querySelector('[data-latest-pill-amz]'), amzLatest);
+  });
 
   const tSeries = document.querySelector('#tSeries'); if(tSeries) tSeries.textContent = total;
   const tUpcoming = document.querySelector('#tUpcoming'); if(tUpcoming) tUpcoming.textContent = upcoming;
@@ -738,27 +903,34 @@ function computeTilesAndDecorate(){
 }
 
 /* ── filtering ──────────────────────────────────── */
-function wireFilters(){
-  function applyFilters(){
-    const fAud  = document.querySelector('#fAudNext')?.checked;
-    const fAmz  = document.querySelector('#fAmzNext')?.checked;
-    const fAny  = document.querySelector('#fAnyUpcoming')?.checked;
-    const fNone = document.querySelector('#fNoNext')?.checked;
+function applyFilters(){
+  const fAud  = document.querySelector('#fAudNext')?.checked;
+  const fAmz  = document.querySelector('#fAmzNext')?.checked;
+  const fAny  = document.querySelector('#fAnyUpcoming')?.checked;
+  const fNone = document.querySelector('#fNoNext')?.checked;
 
-    [Array.from(document.querySelectorAll('#seriesTbody tr')), Array.from(document.querySelectorAll('#mobileView .m-item'))].forEach(rows=>{
-      rows.forEach(el=>{
-        const hasAud = !!parseAnyDate(el.dataset.audNext);
-        const hasAmz = !!parseAnyDate(el.dataset.amzNext);
-        const any = hasAud || hasAmz;
-        let show = true;
-        if(fAud && !hasAud) show = false;
-        if(fAmz && !hasAmz) show = false;
-        if(fAny && !any) show = false;
-        if(fNone && any) show = false;
-        el.style.display = show ? '' : 'none';
-      });
+  [
+    Array.from(document.querySelectorAll('#seriesTbody tr')),
+    Array.from(document.querySelectorAll('#audibleTbody tr')),
+    Array.from(document.querySelectorAll('#amazonTbody tr')), 
+    Array.from(document.querySelectorAll('#mobileView .m-item'))
+  ].forEach(rows=>{
+    rows.forEach(el=>{
+      const hasAud = !!parseAnyDate(el.dataset.audNext);
+      const hasAmz = !!parseAnyDate(el.dataset.amzNext);
+      const any = hasAud || hasAmz;
+      let show = true;
+      if(fAud && !hasAud) show = false;
+      if(fAmz && !hasAmz) show = false;
+      if(fAny && !any) show = false;
+      if(fNone && any) show = false;
+      el.style.display = show ? '' : 'none';
     });
-  }
+  });
+}
+window.applyFilters = applyFilters;
+
+function wireFilters(){
 
   ['#fAudNext','#fAmzNext','#fAnyUpcoming','#fNoNext'].forEach(id=>{
     const cb = document.querySelector(id); if(cb) cb.addEventListener('change', applyFilters);
@@ -857,6 +1029,7 @@ window.openSettingsModal = openSettingsModal;
 function wireSettings(){
   const toggleDays = document.getElementById('toggleDays');
   const toggleTheme = document.getElementById('toggleTheme');
+  const toggleUnifiedView = document.getElementById('toggleUnifiedView');
   const forceScrapeBtn = document.getElementById('forceScrapeBtn');
   
   if(toggleDays){
@@ -871,6 +1044,12 @@ function wireSettings(){
     toggleTheme.addEventListener('change', ()=>{
       const newTheme = toggleTheme.checked ? 'dark' : 'light';
       applyTheme(newTheme);
+    });
+  }
+  
+  if(toggleUnifiedView){
+    toggleUnifiedView.addEventListener('change', ()=>{
+      toggleUnifiedViewMode();
     });
   }
   
@@ -1438,6 +1617,7 @@ function initDashboard(){
   wireSettings();
   wireIcalExport();
   wireUserManagement();
+  initUnifiedView();
   computeTilesAndDecorate();
   
   // Start monitoring background tasks (only if there might be active tasks)
@@ -1453,37 +1633,6 @@ window.addEventListener('beforeunload', ()=>{
 
 // Edit mode functionality
 let editModeActive = false;
-
-function toggleEditMode() {
-  editModeActive = !editModeActive;
-  
-  const editBtn = document.getElementById('editBtn');
-  const deleteBtn = document.getElementById('deleteBtn');
-  const selectAllTh = document.getElementById('selectAllTh');
-  const selectTds = document.querySelectorAll('.selectTd');
-  
-  if (editModeActive) {
-    // Enter edit mode
-    editBtn.style.background = '#10b981';
-    editBtn.style.color = 'white';
-    editBtn.style.borderColor = '#10b981';
-    deleteBtn.style.display = 'flex';
-    selectAllTh.style.display = 'table-cell';
-    selectTds.forEach(td => td.style.display = 'table-cell');
-  } else {
-    // Exit edit mode
-    editBtn.style.background = '';
-    editBtn.style.color = '';
-    editBtn.style.borderColor = '';
-    deleteBtn.style.display = 'none';
-    selectAllTh.style.display = 'none';
-    selectTds.forEach(td => td.style.display = 'none');
-    
-    // Clear all selections
-    document.getElementById('selectAll').checked = false;
-    document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = false);
-  }
-}
 
 function toggleSelectAll(selectAllCheckbox) {
   const checkboxes = document.querySelectorAll('.rowCheckbox');
@@ -1540,6 +1689,153 @@ function deleteSelected() {
     console.error('Error deleting series:', error);
     alert('Error deleting series: ' + error.message);
   });
+}
+
+// Unified view functionality
+let unifiedViewActive = false;
+let currentTab = 'audible';
+
+function setUnifiedView(isUnified) {
+  unifiedViewActive = isUnified;
+  console.log('Setting view to:', isUnified ? 'unified' : 'tabbed');
+  
+  const unifiedHeaders = document.getElementById('unifiedHeaders');
+  const separatedContent = document.getElementById('separatedContent');
+  const audibleContent = document.getElementById('audibleContent');
+  const amazonContent = document.getElementById('amazonContent');
+  
+  if (isUnified) {
+    // Show unified/separated view (all columns in one table)
+    unifiedHeaders.style.setProperty('display', 'none', 'important');
+    separatedContent.style.setProperty('display', 'block', 'important');
+    audibleContent.style.setProperty('display', 'none', 'important');
+    amazonContent.style.setProperty('display', 'none', 'important');
+  } else {
+    // Show tabbed view (separate tables with tabs)
+    unifiedHeaders.style.setProperty('display', 'flex', 'important');
+    separatedContent.style.setProperty('display', 'none', 'important');
+    // Show the currently active tab
+    if (currentTab === 'audible') {
+      audibleContent.style.setProperty('display', 'block', 'important');
+      amazonContent.style.setProperty('display', 'none', 'important');
+    } else {
+      amazonContent.style.setProperty('display', 'block', 'important');
+      audibleContent.style.setProperty('display', 'none', 'important');
+    }
+  }
+  
+  // Update edit mode checkboxes if active
+  if (editModeActive) {
+    updateCheckboxVisibility();
+  }
+  
+  // Reapply filters after view change
+  if (window.applyFilters) {
+    window.applyFilters();
+  }
+}
+
+function toggleUnifiedViewMode() {
+  const newState = !unifiedViewActive;
+  localStorage.setItem('unifiedView', newState);
+  document.getElementById('toggleUnifiedView').checked = newState;
+  setUnifiedView(newState);
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  localStorage.setItem('currentTab', tab);
+  console.log('Switching to tab:', tab);
+  
+  const audibleTab = document.getElementById('audibleTab');
+  const amazonTab = document.getElementById('amazonTab');
+  const audibleContent = document.getElementById('audibleContent');
+  const amazonContent = document.getElementById('amazonContent');
+  
+  if (tab === 'audible') {
+    audibleTab.classList.add('active');
+    amazonTab.classList.remove('active');
+    audibleContent.style.setProperty('display', 'block', 'important');
+    amazonContent.style.setProperty('display', 'none', 'important');
+  } else {
+    amazonTab.classList.add('active');
+    audibleTab.classList.remove('active');
+    amazonContent.style.setProperty('display', 'block', 'important');
+    audibleContent.style.setProperty('display', 'none', 'important');
+  }
+  
+  // Reapply filters after tab switch
+  if (window.applyFilters) {
+    window.applyFilters();
+  }
+}
+
+function updateCheckboxVisibility() {
+  const selectTds = document.querySelectorAll('.selectTd');
+  const selectAllThs = document.querySelectorAll('#selectAllTh, #unifiedSelectAllTh, #unifiedSelectAllTh2');
+  
+  if (editModeActive) {
+    selectTds.forEach(td => td.style.display = 'table-cell');
+    selectAllThs.forEach(th => th.style.display = 'table-cell');
+  } else {
+    selectTds.forEach(td => td.style.display = 'none');
+    selectAllThs.forEach(th => th.style.display = 'none');
+  }
+}
+
+function toggleEditMode() {
+  editModeActive = !editModeActive;
+  
+  const editBtn = document.getElementById('editBtn');
+  const deleteBtn = document.getElementById('deleteBtn');
+  
+  if (editModeActive) {
+    // Enter edit mode
+    editBtn.style.background = '#10b981';
+    editBtn.style.color = 'white';
+    editBtn.style.borderColor = '#10b981';
+    deleteBtn.style.display = 'flex';
+    updateCheckboxVisibility();
+  } else {
+    // Exit edit mode
+    editBtn.style.background = '';
+    editBtn.style.color = '';
+    editBtn.style.borderColor = '';
+    deleteBtn.style.display = 'none';
+    updateCheckboxVisibility();
+    
+    // Clear all selections
+    document.querySelectorAll('#selectAll, #unifiedSelectAll, #unifiedSelectAll2').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = false);
+  }
+}
+
+// Initialize unified view from localStorage or server setting
+function initUnifiedView() {
+  const serverMainView = '{{ .MainView }}'; // From server setting
+  const savedUnifiedView = localStorage.getItem('unifiedView');
+  const savedTab = localStorage.getItem('currentTab') || 'audible';
+  
+  let shouldUseUnified;
+  if (savedUnifiedView !== null) {
+    // User has made a choice - use their preference
+    shouldUseUnified = savedUnifiedView === 'true';
+    console.log('Using saved user preference:', shouldUseUnified ? 'unified' : 'tabbed');
+  } else {
+    // No user preference - use server setting (unified=true, tabbed=false)
+    shouldUseUnified = serverMainView === 'unified';
+    console.log('Using server default:', serverMainView);
+  }
+  
+  document.getElementById('toggleUnifiedView').checked = shouldUseUnified;
+  unifiedViewActive = shouldUseUnified;
+  currentTab = savedTab;
+  
+  // Apply the view directly without toggling
+  setUnifiedView(shouldUseUnified);
+  if (!shouldUseUnified) {
+    switchTab(savedTab);
+  }
 }
 
 </script>

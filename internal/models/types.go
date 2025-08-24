@@ -15,6 +15,7 @@ type Settings struct {
 	ServerPort          int    `yaml:"server_port,omitempty"`           // Server port (default: 8080)
 	CacheTimeout        int    `yaml:"cache_timeout,omitempty"`         // Cache timeout in hours (default: 6)
 	LogLevel           string  `yaml:"log_level,omitempty"`             // Log level: debug, info, warn, error (default: info)
+	MainView           string  `yaml:"main_view,omitempty"`             // Default view mode: unified, tabbed (default: unified)
 }
 
 // GetSettings returns the settings with defaults applied and environment variable overrides
@@ -40,6 +41,9 @@ func (c *Config) GetSettings() Settings {
 	}
 	if settings.LogLevel == "" {
 		settings.LogLevel = "info"
+	}
+	if settings.MainView == "" {
+		settings.MainView = "unified"
 	}
 	
 	return settings

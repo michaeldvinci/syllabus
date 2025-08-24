@@ -52,6 +52,14 @@ func ApplyEnvOverrides(settings *models.Settings) {
 			settings.LogLevel = normalized
 		}
 	}
+	
+	// Main view
+	if env := os.Getenv("SYLLABUS_MAIN_VIEW"); env != "" {
+		normalized := strings.ToLower(strings.TrimSpace(env))
+		if normalized == "unified" || normalized == "tabbed" {
+			settings.MainView = normalized
+		}
+	}
 }
 
 // GetEnvWithDefault returns environment variable value or default if not set
