@@ -2,6 +2,26 @@
 
 A Go web application that tracks audiobook series release dates by scraping Audible and Amazon. Features user authentication, database persistence, background scraping, and automatic refresh capabilities with a clean web UI and JSON API.
 
+## Data Collection & Terms of Service
+
+⚠️ **Important Notice**: This application collects publicly available data from Audible and Amazon through automated web scraping for personal use only. 
+
+**Compliance & Usage:**
+- **Personal Use**: Intended for individual tracking of audiobook series you're interested in
+- **Rate Limited**: Implements intelligent delays and respectful scraping practices
+- **Public Data Only**: Extracts only publicly visible release information (titles, dates, series counts)
+- **No Account Required**: Does not access or require user accounts on either platform
+
+**Performance Expectations:**
+- **Initial Setup**: First scrape may take 10-30 minutes depending on series count
+- **Background Updates**: Automatic refreshes are optimized and much faster (2-5 minutes)
+- **Rate Limiting**: Intentional delays prevent overwhelming provider servers
+
+**Terms of Service Considerations:**
+Users should review [Audible's Terms of Use](https://www.audible.com/conditions-of-use) and [Amazon's Conditions of Use](https://www.amazon.com/gp/help/customer/display.html?nodeId=508088) to ensure compliance with their personal use case. This tool is designed for personal tracking and does not violate automated access restrictions when used responsibly.
+
+---
+
 Originally created to replace manual maintenance of an Obsidian "database" for tracking audiobook release dates. Sample config is included to see how the screenshots below were created.
 
 I call it `syllabus` because it's a list of things to read.
@@ -69,6 +89,7 @@ settings:
   server_port: 8080         # Port for the web server (default: 8080)
   cache_timeout: 6          # Cache timeout in hours (default: 6)
   log_level: "info"         # Logging level: debug, info, warn, error (default: info)
+  main_view: "unified"      # Default view mode: unified, tabbed (default: unified)
 
 # Audiobook/Ebook Series Configuration
 audiobooks:
@@ -90,12 +111,20 @@ For containerized deployments, you can override any setting using environment va
 
 ```yaml
 environment:
-  SYLLABUS_AUTO_REFRESH_INTERVAL: "4"  # Hours between auto-refreshes
-  SYLLABUS_DEFAULT_WORKERS: "2"        # Number of scraper workers  
-  SYLLABUS_SERVER_PORT: "8080"         # Server port
-  PORT: "8080"                         # Alternative port env var (standard)
-  SYLLABUS_CACHE_TIMEOUT: "6"          # Cache timeout in hours
-  SYLLABUS_LOG_LEVEL: "debug"          # Log level: debug, info, warn, error
+  # Server Configuration
+  SYLLABUS_SERVER_PORT: "8080"         # Server port (1-65535)
+  PORT: "8080"                         # Standard port env var (alternative)
+  
+  # Scraping Configuration
+  SYLLABUS_AUTO_REFRESH_INTERVAL: "4"  # Hours between auto-refreshes (>0)
+  SYLLABUS_DEFAULT_WORKERS: "2"        # Number of concurrent scraper workers (>0)
+  SYLLABUS_CACHE_TIMEOUT: "6"          # Cache timeout in hours (>0)
+  
+  # UI Configuration  
+  SYLLABUS_MAIN_VIEW: "unified"        # Default view mode: "unified" or "tabbed"
+  
+  # Logging Configuration
+  SYLLABUS_LOG_LEVEL: "debug"          # Log level: "debug", "info", "warn", "error"
 ```
 
 **Configuration Priority:**

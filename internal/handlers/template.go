@@ -30,7 +30,10 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
 .top-bar-logo .logo{width:32px;height:32px;flex-shrink:0}
 .top-bar-title{font-size:24px;font-weight:600;color:var(--text)}
 .top-bar-search{flex:1;max-width:420px;margin:0 24px;display:flex;gap:8px;align-items:center}
-.search-input{flex:1;padding:10px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;height:40px;box-sizing:border-box}
+.search-input-wrapper{position:relative;flex:1}
+.search-input{width:100%;padding:10px 40px 10px 16px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;height:40px;box-sizing:border-box}
+.search-clear-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.search-clear-btn:hover{background:var(--line);color:var(--text)}
 .add-series-btn{background:var(--bg);border:1px solid var(--line);color:var(--text);cursor:pointer;padding:10px;border-radius:8px;transition:.2s;height:40px;width:40px;box-sizing:border-box;display:flex;align-items:center;justify-content:center}
 .add-series-btn:hover{background:var(--row-hover);border-color:var(--text)}
 [data-theme="dark"] .add-series-btn{background:var(--bg);color:var(--text);border-color:var(--line)}
@@ -235,7 +238,15 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
         <span class="top-bar-title">syllabus</span>
       </div>
       <div class="top-bar-search">
-        <input type="text" class="search-input" placeholder="Search series..." id="searchInput">
+        <div class="search-input-wrapper">
+          <input type="text" class="search-input" placeholder="Search series..." id="searchInput">
+          <button class="search-clear-btn" id="searchClearBtn" style="display:none" title="Clear search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
         <button class="add-series-btn" id="addSeriesBtn" onclick="openAddSeriesModal()" title="Add new series">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -575,13 +586,25 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
         </div>
         <div class="modal-row">
           <div>
-            <div style="font-weight:600">Unified View</div>
-            <div style="color:var(--muted);font-size:.9rem">When on, shows Audible and Amazon in separate columns. When off, shows them in tabs.</div>
+            <div style="font-weight:600">Tabbed View</div>
+            <div style="color:var(--muted);font-size:.9rem">When on, shows Audible and Amazon in separate tabs. When off, shows them in unified columns.</div>
           </div>
-          <label class="switch" aria-label="Toggle unified view">
-            <input type="checkbox" id="toggleUnifiedView">
+          <label class="switch" aria-label="Toggle tabbed view">
+            <input type="checkbox" id="toggleTabbedView">
             <span class="slider"></span>
           </label>
+        </div>
+        <div class="modal-row" id="defaultTabRow" style="display:none">
+          <div>
+            <div style="font-weight:600">Default Tab</div>
+            <div style="color:var(--muted);font-size:.9rem">Choose which tab opens by default in tabbed view.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="defaultTabSelect" style="padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px">
+              <option value="audible">Audible</option>
+              <option value="amazon">Amazon</option>
+            </select>
+          </div>
         </div>
         <div class="modal-row">
           <div>
@@ -947,18 +970,43 @@ function wireFilters(){
 /* ── search ─────────────────────────────────────── */
 function wireSearch(){
   const input = document.querySelector('#searchInput');
+  const clearBtn = document.querySelector('#searchClearBtn');
   if(!input) return;
+  
   const dRows = Array.from(document.querySelectorAll('#seriesTbody tr'));
+  const audibleRows = Array.from(document.querySelectorAll('#audibleTbody tr'));
+  const amazonRows = Array.from(document.querySelectorAll('#amazonTbody tr'));
   const mRows = Array.from(document.querySelectorAll('#mobileView .m-item'));
-  input.addEventListener('input', e=>{
-    const term = e.target.value.trim().toLowerCase();
-    [dRows, mRows].forEach(rows=>{
+  
+  function performSearch() {
+    const term = input.value.trim().toLowerCase();
+    [dRows, audibleRows, amazonRows, mRows].forEach(rows=>{
       rows.forEach(el=>{
         const ok = !term || (el.dataset.title||'').toLowerCase().includes(term);
         el.style.display = ok ? '' : 'none';
       });
     });
-  });
+    
+    // Show/hide clear button
+    if (clearBtn) {
+      clearBtn.style.display = term ? 'flex' : 'none';
+    }
+  }
+  
+  function clearSearch() {
+    input.value = '';
+    performSearch();
+    input.focus();
+  }
+  
+  // Make clearSearch globally available for tab/view switching
+  window.clearSearch = clearSearch;
+  
+  input.addEventListener('input', performSearch);
+  
+  if (clearBtn) {
+    clearBtn.addEventListener('click', clearSearch);
+  }
 }
 
 /* ── status indicator ──────────────────────────── */
@@ -1029,7 +1077,9 @@ window.openSettingsModal = openSettingsModal;
 function wireSettings(){
   const toggleDays = document.getElementById('toggleDays');
   const toggleTheme = document.getElementById('toggleTheme');
-  const toggleUnifiedView = document.getElementById('toggleUnifiedView');
+  const toggleTabbedView = document.getElementById('toggleTabbedView');
+  const defaultTabSelect = document.getElementById('defaultTabSelect');
+  const defaultTabRow = document.getElementById('defaultTabRow');
   const forceScrapeBtn = document.getElementById('forceScrapeBtn');
   
   if(toggleDays){
@@ -1047,9 +1097,26 @@ function wireSettings(){
     });
   }
   
-  if(toggleUnifiedView){
-    toggleUnifiedView.addEventListener('change', ()=>{
-      toggleUnifiedViewMode();
+  if(toggleTabbedView){
+    toggleTabbedView.addEventListener('change', ()=>{
+      toggleTabbedViewMode();
+      // Show/hide default tab selector based on tabbed view state
+      if (toggleTabbedView.checked) {
+        defaultTabRow.style.display = '';
+      } else {
+        defaultTabRow.style.display = 'none';
+      }
+    });
+  }
+  
+  if(defaultTabSelect){
+    defaultTabSelect.addEventListener('change', ()=>{
+      const selectedTab = defaultTabSelect.value;
+      localStorage.setItem('defaultTab', selectedTab);
+      // If currently in tabbed view, switch to the selected tab
+      if (toggleTabbedView && toggleTabbedView.checked) {
+        switchTab(selectedTab);
+      }
     });
   }
   
@@ -1617,7 +1684,7 @@ function initDashboard(){
   wireSettings();
   wireIcalExport();
   wireUserManagement();
-  initUnifiedView();
+  initTabbedView();
   computeTilesAndDecorate();
   
   // Start monitoring background tasks (only if there might be active tasks)
@@ -1691,29 +1758,30 @@ function deleteSelected() {
   });
 }
 
-// Unified view functionality
-let unifiedViewActive = false;
+// Tabbed view functionality
+let tabbedViewActive = false;
 let currentTab = 'audible';
 
-function setUnifiedView(isUnified) {
-  unifiedViewActive = isUnified;
-  console.log('Setting view to:', isUnified ? 'unified' : 'tabbed');
+function setTabbedView(isTabbed) {
+  tabbedViewActive = isTabbed;
+  console.log('Setting view to:', isTabbed ? 'tabbed' : 'unified');
   
   const unifiedHeaders = document.getElementById('unifiedHeaders');
   const separatedContent = document.getElementById('separatedContent');
   const audibleContent = document.getElementById('audibleContent');
   const amazonContent = document.getElementById('amazonContent');
   
-  if (isUnified) {
-    // Show unified/separated view (all columns in one table)
-    unifiedHeaders.style.setProperty('display', 'none', 'important');
-    separatedContent.style.setProperty('display', 'block', 'important');
-    audibleContent.style.setProperty('display', 'none', 'important');
-    amazonContent.style.setProperty('display', 'none', 'important');
-  } else {
+  if (isTabbed) {
     // Show tabbed view (separate tables with tabs)
     unifiedHeaders.style.setProperty('display', 'flex', 'important');
     separatedContent.style.setProperty('display', 'none', 'important');
+    
+    // Get default tab from localStorage or use 'audible' as fallback
+    const defaultTab = localStorage.getItem('defaultTab') || 'audible';
+    if (!currentTab || (currentTab !== 'audible' && currentTab !== 'amazon')) {
+      currentTab = defaultTab;
+    }
+    
     // Show the currently active tab
     if (currentTab === 'audible') {
       audibleContent.style.setProperty('display', 'block', 'important');
@@ -1722,6 +1790,13 @@ function setUnifiedView(isUnified) {
       amazonContent.style.setProperty('display', 'block', 'important');
       audibleContent.style.setProperty('display', 'none', 'important');
     }
+    switchTab(currentTab);
+  } else {
+    // Show unified/separated view (all columns in one table)
+    unifiedHeaders.style.setProperty('display', 'none', 'important');
+    separatedContent.style.setProperty('display', 'block', 'important');
+    audibleContent.style.setProperty('display', 'none', 'important');
+    amazonContent.style.setProperty('display', 'none', 'important');
   }
   
   // Update edit mode checkboxes if active
@@ -1735,11 +1810,17 @@ function setUnifiedView(isUnified) {
   }
 }
 
-function toggleUnifiedViewMode() {
-  const newState = !unifiedViewActive;
-  localStorage.setItem('unifiedView', newState);
-  document.getElementById('toggleUnifiedView').checked = newState;
-  setUnifiedView(newState);
+function toggleTabbedViewMode() {
+  const newState = !tabbedViewActive;
+  localStorage.setItem('tabbedView', newState);
+  document.getElementById('toggleTabbedView').checked = newState;
+  
+  // Clear search when switching views
+  if (window.clearSearch) {
+    window.clearSearch();
+  }
+  
+  setTabbedView(newState);
 }
 
 function switchTab(tab) {
@@ -1762,6 +1843,11 @@ function switchTab(tab) {
     audibleTab.classList.remove('active');
     amazonContent.style.setProperty('display', 'block', 'important');
     audibleContent.style.setProperty('display', 'none', 'important');
+  }
+  
+  // Clear search when switching tabs
+  if (window.clearSearch) {
+    window.clearSearch();
   }
   
   // Reapply filters after tab switch
@@ -1810,31 +1896,51 @@ function toggleEditMode() {
   }
 }
 
-// Initialize unified view from localStorage or server setting
-function initUnifiedView() {
+// Initialize tabbed view from localStorage or server setting
+function initTabbedView() {
   const serverMainView = '{{ .MainView }}'; // From server setting
-  const savedUnifiedView = localStorage.getItem('unifiedView');
-  const savedTab = localStorage.getItem('currentTab') || 'audible';
+  const savedTabbedView = localStorage.getItem('tabbedView');
+  const savedDefaultTab = localStorage.getItem('defaultTab') || 'audible';
+  const savedCurrentTab = localStorage.getItem('currentTab') || savedDefaultTab;
   
-  let shouldUseUnified;
-  if (savedUnifiedView !== null) {
+  let shouldUseTabbed;
+  if (savedTabbedView !== null) {
     // User has made a choice - use their preference
-    shouldUseUnified = savedUnifiedView === 'true';
-    console.log('Using saved user preference:', shouldUseUnified ? 'unified' : 'tabbed');
+    shouldUseTabbed = savedTabbedView === 'true';
+    console.log('Using saved user preference:', shouldUseTabbed ? 'tabbed' : 'unified');
   } else {
-    // No user preference - use server setting (unified=true, tabbed=false)
-    shouldUseUnified = serverMainView === 'unified';
+    // No user preference - use server setting (unified=false, tabbed=true)
+    shouldUseTabbed = serverMainView === 'tabbed';
     console.log('Using server default:', serverMainView);
   }
   
-  document.getElementById('toggleUnifiedView').checked = shouldUseUnified;
-  unifiedViewActive = shouldUseUnified;
-  currentTab = savedTab;
+  // Set toggle state and initialize view
+  const toggleTabbedView = document.getElementById('toggleTabbedView');
+  const defaultTabSelect = document.getElementById('defaultTabSelect');
+  const defaultTabRow = document.getElementById('defaultTabRow');
+  
+  if (toggleTabbedView) {
+    toggleTabbedView.checked = shouldUseTabbed;
+    // Show/hide default tab selector based on tabbed view state
+    if (shouldUseTabbed) {
+      defaultTabRow.style.display = '';
+    } else {
+      defaultTabRow.style.display = 'none';
+    }
+  }
+  
+  // Set default tab selector value
+  if (defaultTabSelect) {
+    defaultTabSelect.value = savedDefaultTab;
+  }
+  
+  tabbedViewActive = shouldUseTabbed;
+  currentTab = savedCurrentTab;
   
   // Apply the view directly without toggling
-  setUnifiedView(shouldUseUnified);
-  if (!shouldUseUnified) {
-    switchTab(savedTab);
+  setTabbedView(shouldUseTabbed);
+  if (shouldUseTabbed) {
+    switchTab(savedCurrentTab);
   }
 }
 
