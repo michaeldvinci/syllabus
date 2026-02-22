@@ -7,7 +7,6 @@ settings:
   cache_timeout: 6          # Cache timeout in hours (default: 6)
   log_level: "info"         # Log level: debug, info, warn, error (default: info)
 
-# Audiobook/Ebook Series Configuration
 audiobooks:
   - title: "1% Lifesteal"
     audible: "https://www.audible.com/series/1-Lifesteal-Audiobooks/B0F8QMLV9T"
@@ -24,6 +23,12 @@ audiobooks:
   - title: "Book of the Dead"
     audible: "https://www.audible.com/series/Book-of-the-Dead-Audiobooks/B0CPHQTMHN"
     amazon: "https://www.amazon.com/dp/B0CG9Y4TPK"
+  - title: "Chrysalis"
+    audible: "https://www.audible.com/series/Chrysalis-Audiobooks/B0B14YZ92Z"
+    amazon: "https://www.amazon.com/dp/B0B2CM6GXM"
+  - title: "The Crypt"
+    audible: "https://www.audible.com/series/The-Crypt-Audiobooks/B0C5QWJ53N"
+    amazon: "https://www.amazon.com/dp/B0CHTY79H9"
   - title: "Defiance of the Fall"
     audible: "https://www.audible.com/series/Defiance-of-the-Fall-Audiobooks/B09B4CQQBT"
     amazon: "https://www.amazon.com/dp/B0916H6FBX"
@@ -69,7 +74,21 @@ audiobooks:
   - title: "Restarting the Apocalypse"
     audible: "https://www.audible.com/series/Restarting-the-Apocalypse-Audiobooks/B0FLDN1P9P"
     amazon: "https://www.amazon.com/dp/B0F6ZCRZ7Y"
+  - title: "Slumrat Rising"
+    audible: "https://www.audible.com/series/Slumrat-Rising-Audiobooks/B0CKLDQ2H6"
+    amazon: "https://www.amazon.com/dp/B0CKM7BVMS"
+  - title: "Sponsored Apocalypse"
+    audible: "https://www.audible.com/series/Sponsored-Apocalypse-Audiobooks/B0CT4ZDGSP"
+    amazon: "https://www.amazon.com/dp/B0CPFXFMSY"
+  - title: "System Universe"
+    audible: "https://www.audible.com/series/System-Universe-Series-Audiobooks/B0BHF8QWT8"
+    amazon: "https://www.amazon.com/dp/B0B6215Z5F"
+  - title: "Ultimate Level 1"
+    audible: "https://www.audible.com/series/Ultimate-Level-1-Audiobooks/B0D33WVLD4"
+    amazon: "https://www.amazon.com/dp/B0CSG8NWMC"
+  - title: "Welcome to the Multiverse"
+    audible: "https://www.audible.com/series/Welcome-to-the-Multiverse-Audiobooks/B0CKL9YTHB"
+    amazon: "https://www.amazon.com/dp/B0CKVDB1VB"
   - title: "World Sphere"
-    audible: "https://www.audible.com/series/World-Sphere-Audiobook/B0DZQMCH45"
+    audible: "https://www.audible.com/series/World-Sphere-Audiobooks/B0G6BGY4D9"
     amazon: "https://www.amazon.com/dp/B0F214Q7R6"
----

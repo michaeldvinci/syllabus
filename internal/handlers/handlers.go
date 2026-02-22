@@ -90,17 +90,18 @@ func (a *App) HandleIndex(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Generate the calendar URL based on the request
-	calendarURL := fmt.Sprintf("%s://%s/calendar.ics",
-		func() string {
-			if r.TLS != nil {
-				return "https"
-			}
-			return "http"
-		}(), r.Host)
-
 	// Get current user from context if available
 	user, authenticated := auth.GetUserFromContext(r)
+
+	// Generate the calendar URL with user's iCal token for subscription
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	calendarURL := fmt.Sprintf("%s://%s/calendar.ics", scheme, r.Host)
+	if authenticated && user.ICalToken != "" {
+		calendarURL = fmt.Sprintf("%s://%s/calendar.ics?token=%s", scheme, r.Host, user.ICalToken)
+	}
 
 	// Get last scrape timestamp
 	lastScrapeTime, err := a.DB.GetLastScrapeTime()
@@ -169,7 +170,6 @@ func (a *App) HandleICal(w http.ResponseWriter, r *http.Request) {
 	icalContent := utils.GenerateICal(infos)
 
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
-	w.Header().Set("Content-Disposition", "attachment; filename=\"book-releases.ics\"")
 	w.Write([]byte(icalContent))
 }
 

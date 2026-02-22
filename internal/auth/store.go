@@ -4,6 +4,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -235,6 +237,36 @@ func (s *Store) DeleteUser(username string) error {
 	s.save()
 	
 	return nil
+}
+
+// GetUserByICalToken finds a user by their iCal subscription token
+func (s *Store) GetUserByICalToken(token string) (*User, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, user := range s.users {
+		if user.ICalToken == token {
+			return user, nil
+		}
+	}
+
+	return nil, ErrUserNotFound
+}
+
+// RegenerateICalToken generates a new iCal token for a user
+func (s *Store) RegenerateICalToken(username string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	user, exists := s.users[username]
+	if !exists {
+		return "", ErrUserNotFound
+	}
+
+	user.ICalToken = uuid.New().String()
+	s.save()
+
+	return user.ICalToken, nil
 }
 
 // cleanupExpiredSessions runs periodically to clean up expired sessions

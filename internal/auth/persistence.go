@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // PersistentUser represents a user for file storage (includes password hash)
@@ -14,6 +16,7 @@ type PersistentUser struct {
 	Username     string    `json:"username"`
 	Role         UserRole  `json:"role"`
 	PasswordHash string    `json:"password_hash"`
+	ICalToken    string    `json:"ical_token,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -36,6 +39,7 @@ func (s *Store) SaveToFile(filename string) error {
 			Username:     user.Username,
 			Role:         user.Role,
 			PasswordHash: user.PasswordHash,
+			ICalToken:    user.ICalToken,
 			CreatedAt:    user.CreatedAt,
 		}
 	}
@@ -85,19 +89,30 @@ func (s *Store) LoadFromFile(filename string) error {
 
 	// Load users into store
 	s.mu.Lock()
+	needsSave := false
 	if data.Users != nil {
 		s.users = make(map[string]*User)
 		for username, persistentUser := range data.Users {
+			icalToken := persistentUser.ICalToken
+			if icalToken == "" {
+				icalToken = uuid.New().String()
+				needsSave = true
+			}
 			s.users[username] = &User{
 				ID:           persistentUser.ID,
 				Username:     persistentUser.Username,
 				Role:         persistentUser.Role,
 				PasswordHash: persistentUser.PasswordHash,
+				ICalToken:    icalToken,
 				CreatedAt:    persistentUser.CreatedAt,
 			}
 		}
 	}
 	s.mu.Unlock()
+
+	if needsSave {
+		s.save()
+	}
 
 	return nil
 }

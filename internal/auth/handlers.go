@@ -386,6 +386,42 @@ func (h *AuthHandlers) HandleDeleteUser(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// HandleRegenerateICalToken regenerates the iCal token for the current user
+func (h *AuthHandlers) HandleRegenerateICalToken(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	user, ok := GetUserFromContext(r)
+	if !ok {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Authentication required",
+		})
+		return
+	}
+
+	newToken, err := h.store.RegenerateICalToken(user.Username)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Failed to regenerate token",
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"token":   newToken,
+	})
+}
+
 const LoginHTML = `
 <!doctype html>
 <html>

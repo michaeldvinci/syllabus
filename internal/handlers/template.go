@@ -615,14 +615,20 @@ body{margin:0;display:flex;flex-direction:column;height:100vh;overflow:hidden;ba
             <button id="forceScrapeBtn" style="padding:6px 12px;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500">Force Scrape</button>
           </div>
         </div>
-        <div class="modal-row">
-          <div>
-            <div style="font-weight:600">iCal Export</div>
-            <div style="color:var(--muted);font-size:.9rem">Subscribe to upcoming release dates in your calendar app.</div>
+        <div class="modal-row" style="flex-direction:column;align-items:stretch;gap:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-weight:600">iCal Subscription</div>
+              <div style="color:var(--muted);font-size:.9rem">Subscribe to upcoming release dates in your calendar app.</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="icalExportBtn" style="padding:6px 12px;background:var(--aud);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500">Download</button>
+            </div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button id="icalExportBtn" style="padding:6px 12px;background:var(--aud);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500">Download</button>
-            <button id="icalSubscribeBtn" style="padding:6px 12px;background:var(--amz);color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500">Subscribe</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" id="icalUrlField" readonly value="{{ .CalendarURL }}" style="flex:1;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:var(--head-bg);color:var(--text);font-size:12px;font-family:monospace;cursor:text" onclick="this.select()">
+            <button id="icalCopyBtn" style="padding:8px 12px;background:var(--amz);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap">Copy URL</button>
+            <button id="icalRegenBtn" style="padding:8px 10px;background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;color:var(--muted);font-size:12px" title="Regenerate token">&#x21bb;</button>
           </div>
         </div>
         <div style="padding-top:16px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">
@@ -1582,31 +1588,50 @@ window.openAddSeriesModal = openAddSeriesModal;
 /* ── ical export ───────────────────────────────── */
 function wireIcalExport(){
   const downloadBtn = document.getElementById('icalExportBtn');
-  const subscribeBtn = document.getElementById('icalSubscribeBtn');
-  
+  const copyBtn = document.getElementById('icalCopyBtn');
+  const regenBtn = document.getElementById('icalRegenBtn');
+  const urlField = document.getElementById('icalUrlField');
+
   if(downloadBtn){
     downloadBtn.addEventListener('click', ()=>{
-      window.open('/calendar.ics', '_blank');
+      window.open(urlField ? urlField.value : '/calendar.ics', '_blank');
     });
   }
-  
-  if(subscribeBtn){
-    subscribeBtn.addEventListener('click', ()=>{
-      const currentUrl = window.location.origin;
-      const icalUrl = currentUrl + '/calendar.ics';
-      
-      // Try to copy to clipboard first
+
+  if(copyBtn && urlField){
+    copyBtn.addEventListener('click', ()=>{
+      const url = urlField.value;
       if(navigator.clipboard){
-        navigator.clipboard.writeText(icalUrl).then(()=>{
-          alert('iCal subscription URL copied to clipboard:\n\n' + icalUrl + '\n\nPaste this into your calendar app to subscribe.');
+        navigator.clipboard.writeText(url).then(()=>{
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = 'Copied!';
+          setTimeout(()=>{ copyBtn.textContent = orig; }, 2000);
         }).catch(()=>{
-          // Fallback: show URL in alert
-          alert('iCal subscription URL:\n\n' + icalUrl + '\n\nCopy this URL and paste it into your calendar app to subscribe.');
+          urlField.select();
+          document.execCommand('copy');
         });
       } else {
-        // Fallback: show URL in alert
-        alert('iCal subscription URL:\n\n' + icalUrl + '\n\nCopy this URL and paste it into your calendar app to subscribe.');
+        urlField.select();
+        document.execCommand('copy');
       }
+    });
+  }
+
+  if(regenBtn && urlField){
+    regenBtn.addEventListener('click', ()=>{
+      if(!confirm('Regenerate your iCal token? Existing calendar subscriptions using the old URL will stop working.')) return;
+      fetch('/api/ical-token/regenerate', { method:'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if(data.success && data.token){
+            const url = new URL(urlField.value);
+            url.searchParams.set('token', data.token);
+            urlField.value = url.toString();
+          } else {
+            alert('Failed to regenerate token');
+          }
+        })
+        .catch(()=> alert('Failed to regenerate token'));
     });
   }
 }

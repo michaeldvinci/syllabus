@@ -19,7 +19,8 @@ type User struct {
 	ID           string    `json:"id"`
 	Username     string    `json:"username"`
 	Role         UserRole  `json:"role"`
-	PasswordHash string    `json:"-"` // Never serialize in API responses
+	PasswordHash string    `json:"-"`          // Never serialize in API responses
+	ICalToken    string    `json:"ical_token"` // Token for iCal subscription auth
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -87,6 +88,7 @@ func NewUser(username, passwordHash string, role UserRole) *User {
 		Username:     username,
 		Role:         role,
 		PasswordHash: passwordHash,
+		ICalToken:    uuid.New().String(),
 		CreatedAt:    time.Now(),
 	}
 }

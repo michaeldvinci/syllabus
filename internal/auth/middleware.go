@@ -103,6 +103,24 @@ func (m *Middleware) RequireAdmin(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+// RequireICalTokenOrAuth allows access via iCal token query param or normal session auth
+func (m *Middleware) RequireICalTokenOrAuth(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if token := r.URL.Query().Get("token"); token != "" {
+			user, err := m.store.GetUserByICalToken(token)
+			if err == nil {
+				ctx := context.WithValue(r.Context(), UserContextKey, user)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		m.RequireAuth(next).ServeHTTP(w, r)
+	})
+}
+
 // GetUserFromContext extracts the user from request context
 func GetUserFromContext(r *http.Request) (*User, bool) {
 	user, ok := r.Context().Value(UserContextKey).(*User)
